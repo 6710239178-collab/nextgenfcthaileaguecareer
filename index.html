@@ -201,6 +201,14 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
 .gm-text{white-space:pre-line;font-size:16px;line-height:1.5;margin-bottom:16px;color:#fff}
 .gm-btns{display:flex;flex-direction:column;gap:10px}
 @keyframes gmPop{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+#homeName,#awayName{max-width:112px;text-align:center;margin:6px auto 0;line-height:1.25;font-size:12px!important;word-break:keep-all;overflow-wrap:anywhere}
+#homeBadge,#awayBadge{margin:0 auto}
+.nav-menu{overflow-x:hidden!important;gap:2px!important}
+.nav-item{min-width:0!important;padding:6px 1px!important;font-size:10px!important}
+.nav-item .ni{font-size:22px!important}
+#decisionBox{position:fixed!important;left:0;right:0;bottom:0;margin:0 auto;max-width:560px;max-height:64vh;overflow-y:auto;z-index:80;border-radius:24px 24px 0 0!important;border-bottom:0!important;padding:16px 14px calc(14px + env(safe-area-inset-bottom,0px))!important;box-shadow:0 -10px 34px rgba(0,0,0,.55);animation:sheetUp .25s ease-out}
+#decisionBox .choice-btn{margin-bottom:8px;font-size:15px}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 </style>
 </head>
 <body>
@@ -280,11 +288,11 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
         <span class="ni">💼</span><span>เอเย่นต์</span>
         <span id="agentNotify" class="badge-notify hidden">!</span>
       </div>
-      <div class="nav-item" onclick="switchTab('attrs', this)"><span class="ni">🏋️</span><span>ศูนย์ฝึกซ้อม</span></div>
-      <div class="nav-item" onclick="switchTab('match', this)"><span class="ni">⚽</span><span>การแข่งขัน</span></div>
+      <div class="nav-item" onclick="switchTab('attrs', this)"><span class="ni">🏋️</span><span>ฝึกซ้อม</span></div>
+      <div class="nav-item" onclick="switchTab('match', this)"><span class="ni">⚽</span><span>แข่งขัน</span></div>
       <div class="nav-item" onclick="switchTab('lifestyle', this)"><span class="ni">🏎️</span><span>ไลฟ์สไตล์</span></div>
       <div class="nav-item" onclick="switchTab('trophies', this)"><span class="ni">🏆</span><span>ผลงาน</span></div>
-      <div class="nav-item" onclick="switchTab('table', this)"><span class="ni">📊</span><span>ตารางคะแนน</span></div>
+      <div class="nav-item" onclick="switchTab('table', this)"><span class="ni">📊</span><span>ตาราง</span></div>
     </div>
   </div>
 
@@ -1025,9 +1033,9 @@ function prepareNextMatch() {
     ? `รายการ: ${isFirstTeam() ? 'ช้าง เอฟเอ คัพ' : 'เยาวชน เอฟเอ คัพ'} (${cupRoundText})` 
     : `รายการ: ${leagueName}`;
   
-  document.getElementById('homeName').textContent = P.club.slice(0, 8);
+  document.getElementById('homeName').textContent = P.club;
   document.getElementById('homeBadge').textContent = "MY";
-  document.getElementById('awayName').textContent = currentOpponent.name.slice(0, 8);
+  document.getElementById('awayName').textContent = currentOpponent.name;
   document.getElementById('awayBadge').textContent = currentOpponent.code || "OPP";
 
   checkMatchReady();
@@ -1064,7 +1072,7 @@ function startLiveMatch() {
   isPlayerWarmingUp = false;
   matchYellow = 0; matchRed = false; oppRed = false; matchSubbedOff = false;
   const banned = (P.banWeeks || 0) > 0; matchBannedNow = banned; if (banned) { P.banWeeks--; alert('⛔ คุณถูกแบน นัดนี้ลงเล่นไม่ได้'); }
-  const benched = !banned && (P.benchWeeks || 0) > 0; if (benched) { P.benchWeeks--; alert('🪑 โค้ชให้คุณนั่งสำรองนัดนี้ เพราะฟอร์มไม่ดี'); }
+  const benched = !banned && !(P.injuredWeeks > 0) && (P.benchWeeks || 0) > 0; if (benched) { P.benchWeeks--; alert('🪑 โค้ชให้คุณนั่งสำรองนัดนี้ เพราะฟอร์มไม่ดี'); }
 
   document.getElementById('scoreText').textContent = "0 - 0";
   document.getElementById('minuteText').textContent = "0'";
@@ -1084,7 +1092,7 @@ function startLiveMatch() {
     addMatchLog(`0'`, `⚽ คุณลงสนามเป็น 11 ตัวจริงให้ ${P.club}!`, 'sub');
     P.stats.apps++; P.season.apps++;
   } else {
-    addMatchLog(`0'`, `🪑 คุณมีชื่อเป็นตัวสำรอง นั่งรอโอกาสข้างสนาม`, 'log');
+    addMatchLog(`0'`, P.injuredWeeks > 0 ? '🩹 คุณบาดเจ็บ ลงเล่นไม่ได้นัดนี้ (ต้องพักรักษาตัว)' : banned ? '⛔ คุณถูกแบน นั่งดูข้างสนามนัดนี้' : benched ? '🪑 โค้ชให้คุณนั่งสำรองนัดนี้ เพราะฟอร์มไม่ดี' : '🪑 คุณมีชื่อเป็นตัวสำรอง นั่งรอโอกาสข้างสนาม', 'log');
   }
 
   // ปรับความเร็วลูปให้กระชับลงพอดีๆ (500ms / นาที)
@@ -1109,7 +1117,7 @@ function runMatchLoop() {
     }
   }
 
-  if (!isPlayerOnField && !isPlayerWarmingUp && !matchSubbedOff && !(P.injuredWeeks > 0) && !matchBannedNow && currentMinute >= 50 && Math.random() < 0.15) {
+  if (!isPlayerOnField && !isPlayerWarmingUp && !matchSubbedOff && !matchRed && !(P.injuredWeeks > 0) && !matchBannedNow && currentMinute >= 50 && Math.random() < 0.15) {
     isPlayerWarmingUp = true;
     addMatchLog(`${currentMinute}'`, `🔥 โค้ชสั่งให้คุณลุกไปวอร์มร่างกายข้างสนาม!`, 'sub');
   }
@@ -1203,6 +1211,42 @@ SCEN.fb = [
   SC('f3','บอลยาวข้ามฝั่ง!','คุณรับบอลอยู่ริมเส้นแดนกลาง!',[C('เก็บบอลแล้วชะลอเกม','S','pa','PLAY'),C('ครอสทะลุหลังแนวรับ','N','pa','ASSIST'),C('ทำสองต่อหนึ่งกับปีกแล้วเจาะเข้า','R','pc','GOAL')]),
   SC('f4','คู่แข่งได้ลูกตั้งเตะ!','บอลจะลอยเข้าหน้าประตูเรา!',[C('ประกบคนตามปกติ','S','df','PLAY'),C('บล็อกพื้นที่หน้าประตู','N','df','PLAY'),C('ขึ้นไปเตรียมสวนกลับเมื่อบอลหลุด','R','pc','PLAY','CONCEDE')])
 ];
+const EXTRA = {
+  a1:[C('แตะไปให้เพื่อนอีกฝั่งที่ว่างกว่า','N','pa','ASSIST'),C('ตั้งบอลให้ตัวเองแล้วยิงเสาใกล้','N','sh','GOAL')],
+  a2:[C('แตะเฉียงด้วยหลังเท้า','N','sh','GOAL'),C('ยิงสวนด้วยหัวเข่าทันที','R','sh','GOAL')],
+  a3:[C('ลากเข้าไปจนกองหลังออกมา แล้วจ่ายตอนสุดท้าย','N','pa','ASSIST'),C('ซัดเสาไกลทันที','R','sh','GOAL')],
+  a4:[C('เปิดโด่งเข้ากลางกรอบ','N','pa','ASSIST'),C('ชิปข้ามกำแพงเข้ามุม','R','sh','GOAL')],
+  a5:[C('จ่ายเฉียงให้ปีกวิ่งสวน','N','pa','ASSIST'),C('ยิงเสาใกล้แรง ๆ','R','sh','GOAL')],
+  a6:[C('ลากออกริมเส้นแล้วครอส','N','pa','ASSIST'),C('ยิงเลยจากมุมแคบ','R','sh','GOAL')],
+  m1:[C('หมุนตัวหนีแล้วลากบอลออก','N','pc','PLAY'),C('ชิปบอลข้ามกลางสนาม','R','pa','ASSIST')],
+  m2:[C('ยิงเสาไกลด้วยข้างเท้าใน','N','sh','GOAL'),C('แต่งบอลเข้าไปในเขตโทษ','N','pa','ASSIST')],
+  m3:[C('ดักบอลที่จะส่งแล้วสวนกลับ','N','pc','PLAY'),C('ฟาวล์หยุดเกมไว้ก่อน','S','df','PLAY')],
+  m4:[C('เปิดลูกลอยไปจุดโทษ','N','pa','ASSIST'),C('เปิดเสาใกล้ให้ไปต่อ','N','pa','ASSIST')],
+  m5:[C('จ่ายสั้นแล้ววิ่งขึ้นไปรอบอลกลับ','N','pa','PLAY'),C('ยิงไกลจากกลางสนาม','R','sh','GOAL')],
+  d1:[C('ดันออกข้างให้เสียมุม','S','df','PLAY'),C('ประกบไหล่ชนไหล่','N','df','PLAY','CONCEDE')],
+  d2:[C('ตัดบอลด้วยหน้าอก','N','df','PLAY'),C('เบียดคู่แข่งออกจากลูก','N','df','PLAY','CONCEDE')],
+  d3:[C('เปิดบอลยาวข้ามฝั่ง','N','pa','PLAY','CONCEDE'),C('ส่งกลับให้ผู้รักษาประตู','S','pa','PLAY')],
+  d4:[C('วิ่งสวนเข้าไปเสาไกล','N','sh','PLAY'),C('ยืนบล็อกผู้รักษาประตูคู่แข่ง','N','df','PLAY')],
+  d5:[C('เข้าดักบอลกลางทาง','N','df','PLAY','CONCEDE'),C('ฟาวล์หยุดเกมไว้','S','df','PLAY')],
+  g1:[C('ปัดกลับเข้ากลางสนาม','N','pc','PLAY','CONCEDE'),C('ดึงบอลขึ้นด้วยมือเดียว','R','pc','PLAY','CONCEDE')],
+  g2:[C('ขยายตัวให้กว้างปิดมุม','S','df','PLAY'),C('ล้มตัวล้วงบอลก่อนยิง','R','pc','PLAY','CONCEDE')],
+  g3:[C('ชกบอลสองมือ','N','sh','PLAY'),C('ตะโกนให้เพื่อนเคลียร์แล้วถอยตั้งหลัก','S','df','PLAY')],
+  g4:[C('ยืนกลางประตูแล้วรอ','S','df','PLAY','CONCEDE'),C('พุ่งก่อนยิงนิดหน่อย','R','pc','PLAY','CONCEDE')],
+  g5:[C('ปัดออกข้างทันที','S','pc','PLAY'),C('จ่ายทะลุไปให้กองหน้าเราที่ไกล','R','pa','PLAY','CONCEDE')],
+  f1:[C('เลี้ยงไล่ตามเส้นแล้วเปิด','N','pc','ASSIST'),C('ยิงมุมแคบจากริมเส้น','R','sh','GOAL')],
+  f2:[C('ปิดทางเปิดแล้วรอเพื่อนมาช่วย','S','df','PLAY'),C('เบียดออกนอกสนาม','N','df','PLAY','CONCEDE')],
+  f3:[C('เล่นสองต่อหนึ่งกับเพื่อนในเขตโทษ','N','pa','ASSIST'),C('ซัดเสาไกลทันที','R','sh','GOAL')],
+  f4:[C('ถอยลงต่ำคุมพื้นที่','S','df','PLAY'),C('ขึ้นดักบอลก่อน','N','df','PLAY')]
+};
+[...SCEN.atk, ...SCEN.mid, ...SCEN.def, ...SCEN.gk, ...SCEN.fb].forEach(x => { if (EXTRA[x.id]) x.ch.push(...EXTRA[x.id]); });
+SCEN.atk.push(
+  SC('a7','เพื่อนเปิดบอลถึงหน้าประตู!','ผู้รักษาประตูออกไปไกล เหลือแต่คุณกับประตูว่าง!',[C('แตะเข้าประตูว่าง ๆ','E','sh','GOAL'),C('แตะเข้าด้วยหลังเท้าแบบเท่ ๆ','N','sh','GOAL'),C('ยิงสุดแรง','N','sh','GOAL'),C('เล่นหลอกก่อนค่อยแตะ','R','pc','GOAL'),C('ตั้งให้เพื่อนที่เข้ามา','S','pa','ASSIST')]),
+  SC('a8','เจอผู้รักษาประตูตัวต่อตัว!','เหลือแค่คุณกับผู้รักษาประตูที่ออกมาปิด!',[C('แตะลอดขา','N','sh','GOAL'),C('ชิปข้ามหัว','R','sh','GOAL'),C('เลี้ยงหลบแล้วยิงเข้าประตูว่าง','N','pc','GOAL'),C('ยิงแรงเข้ามุมล่าง','N','sh','GOAL'),C('จ่ายให้เพื่อนที่ตามมา','S','pa','ASSIST')]),
+  SC('a9','ได้ยิงไกลหน้ากรอบเขตโทษ!','ไม่มีใครมาประกบ มีช่องให้ยิง!',[C('ยิงเสาไกล','N','sh','GOAL'),C('ยิงเสาใกล้','R','sh','GOAL'),C('ยิงเสียบมุมล่าง','N','sh','GOAL'),C('เปิดเป็นครอสเข้ากรอบ','S','pa','ASSIST'),C('ทดกลับให้เพื่อน','S','pa','PLAY')])
+);
+SCEN.mid.push(SC('m6','คุมกลางสนามอยู่ แนวรับคู่แข่งถอยลึก','เปิดบอลได้หลายแบบ เลือกจังหวะ!',[C('ยิงไกลเลย','R','sh','GOAL'),C('เปิดบอลทะลุช่อง','N','pa','ASSIST'),C('เล่นสั้นรอจังหวะ','S','pa','PLAY'),C('ครอสโด่งเข้ากรอบ','N','pa','ASSIST'),C('ลากเลี้ยงผ่านเข้าไป','R','pc','PLAY','CONCEDE')]));
+SCEN.def.push(SC('d6','กองหน้าคู่แข่งรอรับบอลหลังคุณ!','บอลลอยมา คุณต้องรีบตัดสินใจ!',[C('ถอยเข้าไปตัดหน้า','N','df','PLAY','CONCEDE'),C('ดันตัวเบียดจากด้านหลัง','N','df','PLAY'),C('ปล่อยให้ผู้รักษาประตูออกมาเก็บ','S','df','PLAY'),C('ตะโกนเรียกเพื่อนมาช่วยปิด','S','df','PLAY'),C('วิ่งสวนเข้าไปแย่งก่อนรับบอล','R','pc','PLAY','CONCEDE')]));
+SCEN.gk.push(SC('g6','เตะลูกโด่งจากประตู','ทีมกำลังรอให้คุณเริ่มเกมต่อ',[C('เตะยาวไปหากองหน้า','N','pa','PLAY'),C('เตะสั้นให้กองหลัง','S','pa','PLAY'),C('ขว้างบอลให้ปีกที่วิ่งเร็ว','N','pa','PLAY'),C('เตะวอลเลย์ไกลสุด','R','pa','PLAY','CONCEDE'),C('ถือบอลไว้ก่อนแล้วจัดทีม','S','df','PLAY')]));
 let curChoices = [];
 const usedScen = [];
 const RISK_TAG = { S: '🛡️ เอาชัวร์', N: '⚖️ สมดุล', R: '🔥 เสี่ย' };
@@ -1224,12 +1268,12 @@ function pickScenario() {
 
 function triggerPlayerDecision(min) {
   const sc = pickScenario();
-  curChoices = sc.ch;
+  curChoices = sc.ch.slice().sort(() => Math.random() - 0.5);
   document.getElementById('decisionBox').classList.remove('hidden');
   document.getElementById('decTitle').textContent = `⚡ (${min}') ${sc.title}`;
   document.getElementById('decDesc').textContent = sc.desc;
-  document.getElementById('decChoices').innerHTML = sc.ch.map((c, i) =>
-    `<div class="choice-btn" onclick="makeChoice(${i})"><b>${RISK_TAG[c.r]}</b> · ${c.t}</div>`).join('');
+  document.getElementById('decChoices').innerHTML = curChoices.map((c, i) =>
+    `<div class="choice-btn" onclick="makeChoice(${i})">${c.t}</div>`).join('');
 }
 
 function makeChoice(i) {
@@ -1239,7 +1283,7 @@ function makeChoice(i) {
   box.classList.add('hidden');
   const STAT = { sh: 'shooting', pa: 'passing', pc: 'pace', df: 'defending' };
   let opp = currentOpponent ? currentOpponent.rating : 70;
-  let p = 0.45 + (P.attrs[STAT[c.st]] - opp) * 0.01 + (c.r === 'S' ? 0.25 : c.r === 'R' ? -0.15 : 0);
+  let p = 0.34 + (P.attrs[STAT[c.st]] - opp) * 0.01 + (c.r === 'E' ? 0.4 : c.r === 'S' ? 0.25 : c.r === 'R' ? -0.15 : 0);
   if (P.fitness < 30) p -= 0.15;
   p = Math.max(0.08, Math.min(0.92, p));
   const t = `${currentMinute}'`;
@@ -1258,7 +1302,7 @@ function makeChoice(i) {
     }
   } else {
     card.classList.add('flash-red'); setTimeout(() => card.classList.remove('flash-red'), 800);
-    const sev = c.r === 'S' ? 1 : c.r === 'N' ? 2 : 3;
+    const sev = c.r === 'S' || c.r === 'E' ? 1 : c.r === 'N' ? 2 : 3;
     matchRating = Math.max(4, matchRating - (sev === 1 ? 0.3 : sev === 2 ? 0.5 : 0.8)); P.coachTrust = Math.max(0, P.coachTrust - sev);
     addMatchLog(t, `❌ FAILED! ${c.t} ... พลาด`, 'alert');
     if (c.f === 'CONCEDE' && Math.random() < 0.5) {
