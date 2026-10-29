@@ -283,7 +283,7 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
       <div class="nav-item" onclick="switchTab('attrs', this)"><span class="ni">🏋️</span><span>ศูนย์ฝึกซ้อม</span></div>
       <div class="nav-item" onclick="switchTab('match', this)"><span class="ni">⚽</span><span>การแข่งขัน</span></div>
       <div class="nav-item" onclick="switchTab('lifestyle', this)"><span class="ni">🏎️</span><span>ไลฟ์สไตล์</span></div>
-      <div class="nav-item" onclick="switchTab('trophies', this)"><span class="ni">🏆</span><span>ถ้วยรางวัล</span></div>
+      <div class="nav-item" onclick="switchTab('trophies', this)"><span class="ni">🏆</span><span>ผลงาน</span></div>
       <div class="nav-item" onclick="switchTab('table', this)"><span class="ni">📊</span><span>ตารางคะแนน</span></div>
     </div>
   </div>
@@ -331,14 +331,7 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-header"><div class="card-title">📌 สถิติผลงานฤดูกาลนี้</div></div>
-          <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px;">
-            <div style="background:#070a12; padding:14px; border-radius:8px; text-align:center;"><div style="font-family:var(--font-title); font-size:22px; color:var(--accent-gold);" id="stApps">0</div><div style="font-size:12px; color:var(--text-muted);">ลงสนาม (นัด)</div></div>
-            <div style="background:#070a12; padding:14px; border-radius:8px; text-align:center;"><div style="font-family:var(--font-title); font-size:22px; color:var(--accent-gold);" id="stGoals">0</div><div style="font-size:12px; color:var(--text-muted);">ประตู (ลูก)</div></div>
-            <div style="background:#070a12; padding:14px; border-radius:8px; text-align:center;"><div style="font-family:var(--font-title); font-size:22px; color:var(--accent-gold);" id="stAssists">0</div><div style="font-size:12px; color:var(--text-muted);">แอสซิสต์</div></div>
-          </div>
-        </div>
+        
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
           <div class="card">
@@ -423,6 +416,19 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
 
       <!-- TROPHIES TAB -->
       <div id="tab-trophies" class="view-panel">
+        <div class="card">
+          <div class="card-header"><div class="card-title">📈 ผลงานตลอดอาชีพ</div></div>
+          <div id="careerTotals" style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px;"></div>
+          <div style="overflow-x:auto; margin-top:14px;"><table class="league-table" style="width:100%; min-width:430px;"><thead><tr><th>ปี</th><th>อายุ</th><th>สโมสร</th><th>นัด</th><th>ประตู</th><th>แอส</th><th>เรตติ้ง</th><th>อันดับ</th></tr></thead><tbody id="seasonLogBody"></tbody></table></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">📌 ผลงานฤดูกาลนี้</div></div>
+          <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px;">
+            <div style="background:#070a12; padding:14px; border-radius:8px; text-align:center;"><div style="font-family:var(--font-title); font-size:22px; color:var(--accent-gold);" id="stApps">0</div><div style="font-size:12px; color:var(--text-muted);">ลงสนาม (นัด)</div></div>
+            <div style="background:#070a12; padding:14px; border-radius:8px; text-align:center;"><div style="font-family:var(--font-title); font-size:22px; color:var(--accent-gold);" id="stGoals">0</div><div style="font-size:12px; color:var(--text-muted);">ประตู (ลูก)</div></div>
+            <div style="background:#070a12; padding:14px; border-radius:8px; text-align:center;"><div style="font-family:var(--font-title); font-size:22px; color:var(--accent-gold);" id="stAssists">0</div><div style="font-size:12px; color:var(--text-muted);">แอสซิสต์</div></div>
+          </div>
+        </div>
         <div class="card">
           <div class="card-header"><div class="card-title">🏆 ถ้วยรางวัลและเกียรติยศ (Trophy Cabinet)</div></div>
           <div id="trophyContainer"></div>
@@ -575,6 +581,46 @@ let youthTeams = leagueTeams.map(t => ({ ...t }));
 let tableView = null;
 let matchBannedNow = false;
 let matchYellow = 0, matchRed = false, oppRed = false;
+const SQ_FN = ['อนุชา','ธีรศักดิ์','ภูริทัต','กิตติพงษ์','ณัฐวุฒิ','ศุภชัย','วรากร','ปรีชา','สิทธิชัย','เอกพล','พีรพัฒน์','อภิรักษ์','จักรพงษ์','สุรชัย','ธนภัทร','วีระ','พงศกร','ชยพล','กฤษณะ','นพดล','ปิยะ','ธวัชชัย'];
+const SQ_LN = ['ใจดี','แสงทอง','บุญมา','ศรีสุข','วงศ์ไทย','มณีรัตน์','เพชรสุวรรณ','รุ่งเรือง','จันทร์เพ็ญ','สุขสวัสดิ์','ทองดี','พรหมมา','คำแก้ว','อินทร์แก้ว','ศิริชัย','มั่นคง'];
+function genSquad() {
+  const used = new Set(), out = [];
+  const roles = [['FW',4,false],['FW',4,false],['FW',4,true],['MF',2,false],['MF',2,false],['MF',2,true],['DF',0.7,false],['DF',0.7,false],['DF',0.7,true]];
+  roles.forEach(([r, w, sr]) => {
+    let n; do { n = SQ_FN[Math.floor(Math.random() * SQ_FN.length)] + ' ' + SQ_LN[Math.floor(Math.random() * SQ_LN.length)]; } while (used.has(n));
+    used.add(n); out.push({ n, r, w, senior: sr });
+  });
+  return out;
+}
+function ownGoalText() {
+  const t = myTeam(), a = pickScorer(t); let b = pickScorer(t);
+  for (let i = 0; i < 8 && b === a; i++) b = pickScorer(t);
+  return `${a} (${P.club}) ยิงประตู!${Math.random() < 0.5 && b !== a ? ' แอสซิสต์: ' + b : ''}`;
+}
+function squadOf(t) {
+  if (!t.squad) {
+    const twin = [...leagueTeams, ...youthTeams, ...div2Teams].find(x => x.name === t.name && x !== t && x.squad);
+    let sq = genSquad();
+    for (let i = 0; i < 12 && twin && sq.some(p => twin.squad.some(q => q.n === p.n)); i++) sq = genSquad();
+    t.squad = sq;
+  }
+  return t.squad;
+}
+function pickScorer(t) {
+  const sq = squadOf(t); let x = Math.random() * sq.reduce((a, b) => a + b.w, 0);
+  for (const pl of sq) { x -= pl.w; if (x <= 0) return pl.n + (pl.senior && !youthTeams.includes(t) ? ' ⭐' : ''); }
+  return sq[0].n;
+}
+function seniorsOf(t) { const y = youthTeams.includes(t); return squadOf(t).filter(x => y ? x.r === 'FW' : x.senior).slice(0, 2).map(x => x.n).join(', '); }
+function myTeam() { return tbl().find(t => t.name === P.club) || div2Teams.find(t => t.name === P.club) || leagueTeams[0]; }
+function renderCareerStats() {
+  const st = P.stats, avg = st.rN ? (st.rSum / st.rN).toFixed(1) : '-';
+  const box = (v, l) => `<div style="background:rgba(10,25,70,.55); padding:12px; border-radius:12px; text-align:center;"><div style="font-family:var(--font-title); font-size:20px; color:var(--accent-gold);">${v}</div><div style="font-size:11px; color:var(--text-muted);">${l}</div></div>`;
+  document.getElementById('careerTotals').innerHTML = box(st.apps, 'นัดรวม') + box(st.goals, 'ประตูรวม') + box(st.assists, 'แอสซิสต์รวม') + box(avg, 'เรตติ้งเฉลี่ย');
+  const rows = (P.history || []).map(h => `<tr><td>${h.season}</td><td>${h.age}</td><td>${h.club}</td><td>${h.apps}</td><td>${h.goals}</td><td>${h.assists}</td><td>${h.rating || '-'}</td><td>${h.pos || '-'}</td></tr>`);
+  rows.push(`<tr class="my-team"><td>${currentSeason}*</td><td>${P.age}</td><td>${P.club}</td><td>${P.season.apps}</td><td>${P.season.goals}</td><td>${P.season.assists}</td><td>${P.season.rN ? (P.season.rSum / P.season.rN).toFixed(1) : '-'}</td><td>${tbl().findIndex(t => t.name === P.club) + 1}</td></tr>`);
+  document.getElementById('seasonLogBody').innerHTML = rows.join('');
+}
 function tbl() { return isFirstTeam() ? leagueTeams : youthTeams; }
 let agentHired = false;
 let agentOfferPending = null;
@@ -726,6 +772,7 @@ function updateDashboardUI() {
   document.getElementById('stApps').textContent = P.season.apps;
   document.getElementById('stGoals').textContent = P.season.goals;
   document.getElementById('stAssists').textContent = P.season.assists;
+  renderCareerStats();
   document.getElementById('coachTrustText').textContent = `${P.coachTrust} / 100`;
 
   document.getElementById('infoVal').textContent = `฿${P.marketValue.toLocaleString()}`;
@@ -966,7 +1013,7 @@ function prepareNextMatch() {
   let leagueName = isFirstTeam() ? "ฟุตบอลไทยลีก 1" : "ไทย Youth League (U18)";
   let teamSuffix = isFirstTeam() ? "" : " U18";
 
-  document.getElementById('matchVsTitle').textContent = `${isHome ? '🏠 เหย้า' : '✈️ เยือน'} พบ ${currentOpponent.name}${teamSuffix} (เรตติ้ง ${currentOpponent.rating} · อันดับ ${tbl().indexOf(currentOpponent) + 1})`;
+  document.getElementById('matchVsTitle').textContent = `${isHome ? '🏠 เหย้า' : '✈️ เยือน'} พบ ${currentOpponent.name}${teamSuffix} (เรตติ้ง ${currentOpponent.rating} · อันดับ ${tbl().indexOf(currentOpponent) + 1}) · แกนนำ ${seniorsOf(currentOpponent)}`;
   document.getElementById('matchCupTypeText').textContent = isCupMatch 
     ? `รายการ: ${isFirstTeam() ? 'ช้าง เอฟเอ คัพ' : 'เยาวชน เอฟเอ คัพ'} (${cupRoundText})` 
     : `รายการ: ${leagueName}`;
@@ -1089,11 +1136,11 @@ function simulateMinuteEvent(min) {
   if (Math.random() < hp) {
     homeScore++;
     document.getElementById('scoreText').textContent = `${homeScore} - ${awayScore}`;
-    addMatchLog(`${min}'`, `⚽ GOAL! ${P.club} ยิงประตูได้!`, 'highlight');
+    addMatchLog(`${min}'`, `⚽ GOAL! ${ownGoalText()}`, 'highlight');
   } else if (Math.random() < ap) {
     awayScore++;
     document.getElementById('scoreText').textContent = `${homeScore} - ${awayScore}`;
-    addMatchLog(`${min}'`, `🚨 GOAL! ${currentOpponent.name} ได้ประตู`, 'alert');
+    addMatchLog(`${min}'`, `🚨 GOAL! ${pickScorer(currentOpponent)} (${currentOpponent.name}) ยิงประตู`, 'alert');
   }
 }
 
@@ -1181,10 +1228,10 @@ function makeChoice(i) {
     card.classList.add('flash-gold'); setTimeout(() => card.classList.remove('flash-gold'), 800);
     if (c.ok === 'GOAL') {
       homeScore++; matchGoals++; matchRating = Math.min(10, matchRating + 1.2); P.coachTrust = Math.min(100, P.coachTrust + 3); score();
-      addMatchLog(t, `🌟 SUCCESS! ${c.t} ... เข้าประตู! (+1 ประตู)`, 'highlight');
+      addMatchLog(t, `🌟 SUCCESS! ${c.t} ... เข้าประตู! (+1 ประตู)${Math.random() < 0.5 ? ' · แอสซิสต์: ' + pickScorer(myTeam()) : ''}`, 'highlight');
     } else if (c.ok === 'ASSIST') {
       homeScore++; matchAssists++; matchRating = Math.min(10, matchRating + 1.0); P.coachTrust = Math.min(100, P.coachTrust + 2); score();
-      addMatchLog(t, `🌟 SUCCESS! ${c.t} ... เพื่อนจบสกอร์! (+1 แอสซิสต์)`, 'highlight');
+      addMatchLog(t, `🌟 SUCCESS! ${c.t} ... ${pickScorer(myTeam())} จบสกอร์! (+1 แอสซิสต์)`, 'highlight');
     } else {
       matchRating = Math.min(10, matchRating + (c.r === 'S' ? 0.3 : c.r === 'N' ? 0.6 : 0.9)); P.coachTrust = Math.min(100, P.coachTrust + 2);
       addMatchLog(t, `✅ ${c.r === 'S' ? 'ปลอดภัย' : 'สำเร็จ'}! ${c.t}`, 'highlight');
@@ -1196,7 +1243,7 @@ function makeChoice(i) {
     addMatchLog(t, `❌ FAILED! ${c.t} ... พลาด`, 'alert');
     if (c.f === 'CONCEDE' && Math.random() < 0.5) {
       awayScore++; score();
-      addMatchLog(t, `🚨 GOAL! ${currentOpponent.name} ทำประตูจากความผิดพลาด`, 'alert');
+      addMatchLog(t, `🚨 GOAL! ${pickScorer(currentOpponent)} (${currentOpponent.name}) ทำประตูจากความผิดพลาดของเรา`, 'alert');
     }
   }
   matchTimer = setInterval(runMatchLoop, 500);
@@ -1216,6 +1263,7 @@ function showMatchSummary() {
     if (awayScore === 0 && ['GK','CB','LB','RB','CDM'].includes(P.pos)) { matchRating = Math.min(10, matchRating + 0.6); P.coachTrust = Math.min(100, P.coachTrust + 2); addMatchLog("90'", '🧤 รักษาคลีนชีตได้!', 'highlight'); }
   }
   if (matchMinutesPlayed > 0) P.coachTrust = Math.min(100, P.coachTrust + (matchRating >= 8 ? 3 : matchRating >= 7 ? 2 : matchRating >= 6 ? 1 : 0));
+  if (matchMinutesPlayed > 0) { P.season.rSum = (P.season.rSum || 0) + matchRating; P.season.rN = (P.season.rN || 0) + 1; P.stats.rSum = (P.stats.rSum || 0) + matchRating; P.stats.rN = (P.stats.rN || 0) + 1; }
   P.stats.goals += matchGoals; P.stats.assists += matchAssists;
   P.season.goals += matchGoals; P.season.assists += matchAssists;
   document.getElementById('ratingSummaryBox').classList.remove('hidden');
@@ -1274,10 +1322,11 @@ function advanceSeason() {
     trophiesWon.push({ name: tName, year: currentSeason });
     renderTrophies();
   }
+  (P.history = P.history || []).push({ season: currentSeason, age: P.age, club: P.club, apps: P.season.apps, goals: P.season.goals, assists: P.season.assists, rating: P.season.rN ? +(P.season.rSum / P.season.rN).toFixed(1) : 0, pos: tbl().findIndex(t => t.name === P.club) + 1 });
   currentSeason++; currentWeek = 1; P.age++;
   runPromotionRelegation();
   [leagueTeams, youthTeams, div2Teams].forEach(tb => tb.forEach(t => { t.p = t.w = t.d = t.l = t.pts = 0; t.gf = 0; t.ga = 0; t.rating = Math.max(50, Math.min(80, t.rating + Math.floor(Math.random() * 5) - 2)); }));
-  cupAlive = true; P.season = { apps: 0, goals: 0, assists: 0, yellows: 0, reds: 0 };
+  cupAlive = true; P.season = { apps: 0, goals: 0, assists: 0, yellows: 0, reds: 0, rSum: 0, rN: 0 };
   alert(`📅 จบฤดูกาล! เข้าสู่ปีที่ ${currentSeason} (อายุ ${P.age} ปี)`);
   if (P.age >= 31) {
     P.attrs.pace = Math.max(30, P.attrs.pace - 2);
