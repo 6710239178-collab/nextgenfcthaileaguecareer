@@ -209,6 +209,15 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
 #decisionBox{position:fixed!important;left:0;right:0;bottom:0;margin:0 auto;max-width:560px;max-height:64vh;overflow-y:auto;z-index:80;border-radius:24px 24px 0 0!important;border-bottom:0!important;padding:16px 14px calc(14px + env(safe-area-inset-bottom,0px))!important;box-shadow:0 -10px 34px rgba(0,0,0,.55);animation:sheetUp .25s ease-out}
 #decisionBox .choice-btn{margin-bottom:8px;font-size:15px}
 @keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.main-content,.view-container,.view-panel,.card{min-width:0}
+.league-table th,.league-table td{padding:8px 4px!important;font-size:12.5px}
+.league-table td:nth-child(2){min-width:96px;line-height:1.25}
+#tableTabs button{width:auto!important;flex:1 1 0;min-width:0;padding:8px 6px!important}
+.live-scoreboard > div[style*="space-around"]{display:grid!important;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px}
+.live-scoreboard > div[style*="space-around"] > div{text-align:center;min-width:0}
+#homeName,#awayName{max-width:100%!important;font-size:12px!important}
+.score-display{white-space:nowrap;letter-spacing:0!important}
 </style>
 </head>
 <body>
@@ -503,10 +512,10 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
         <div class="card">
           <div class="card-header"><div class="card-title" id="tableTitleText">📊 ตารางคะแนน ไทย Youth League (U18)</div></div>
           <div id="tableTabs" style="display:flex; gap:6px; padding:8px 0; flex-wrap:wrap;"></div>
-          <table class="league-table">
-            <thead><tr><th>อันดับ</th><th>สโมสร</th><th>แข่ง</th><th>ชนะ</th><th>เสมอ</th><th>แพ้</th><th>+/-</th><th>แต้ม</th></tr></thead>
+          <div class="tbl-wrap"><table class="league-table">
+            <thead><tr><th>#</th><th>สโมสร</th><th>ลง</th><th>ชนะ</th><th>เสมอ</th><th>แพ้</th><th>+/-</th><th>แต้ม</th></tr></thead>
             <tbody id="leagueTableBody"></tbody>
-          </table>
+          </table></div>
         </div>
       </div>
 
