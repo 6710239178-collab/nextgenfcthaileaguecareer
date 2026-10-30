@@ -616,7 +616,7 @@ function genSquad() {
 function ownGoalText() {
   const t = myTeam(), a = pickScorer(t); let b = pickScorer(t);
   for (let i = 0; i < 8 && b === a; i++) b = pickScorer(t);
-  return `${a} (${P.club}) ยิงประตู!${Math.random() < 0.5 && b !== a ? ' แอสซิสต์: ' + b : ''}`;
+  return `${a} (${myName()}) ยิงประตู!${Math.random() < 0.5 && b !== a ? ' แอสซิสต์: ' + b : ''}`;
 }
 function squadOf(t) {
   if (!t.squadFixed && SQUAD_DATA[t.name]) {
@@ -632,12 +632,13 @@ function squadOf(t) {
   return t.squad;
 }
 function pickScorer(t) {
+  if (t.noNames) return 'ผู้เล่น';
   const sq = squadOf(t); let x = Math.random() * sq.reduce((a, b) => a + b.w, 0);
   for (const pl of sq) { x -= pl.w; if (x <= 0) return pl.n + (pl.senior && !youthTeams.includes(t) ? ' ⭐' : ''); }
   return sq[0].n;
 }
 function seniorsOf(t) { const y = youthTeams.includes(t); return squadOf(t).filter(x => y ? x.r === 'FW' : x.senior).slice(0, 2).map(x => x.n).join(', '); }
-function myTeam() { return tbl().find(t => t.name === P.club) || div2Teams.find(t => t.name === P.club) || leagueTeams[0]; }
+function myTeam() { if (natMatch) return natMatch.team; return tbl().find(t => t.name === P.club) || div2Teams.find(t => t.name === P.club) || leagueTeams[0]; }
 function renderCareerStats() {
   const st = P.stats, avg = st.rN ? (st.rSum / st.rN).toFixed(1) : '-';
   const box = (v, l) => `<div style="background:rgba(10,25,70,.55); padding:12px; border-radius:12px; text-align:center;"><div style="font-family:var(--font-title); font-size:20px; color:var(--accent-gold);">${v}</div><div style="font-size:11px; color:var(--text-muted);">${l}</div></div>`;
@@ -659,7 +660,7 @@ const POS_STATS = {ST:['shooting','pace','passing'],LW:['pace','shooting','passi
 const OVR_W = { ST:[.3,.4,.2,.1], LW:[.35,.25,.25,.15], RW:[.35,.25,.25,.15], CAM:[.2,.3,.4,.1], CM:[.2,.2,.35,.25], CDM:[.2,.15,.3,.35], LB:[.3,.15,.25,.3], RB:[.3,.15,.25,.3], CB:[.25,.15,.25,.35], GK:[.3,.3,.1,.3] };
 function calcOvr(a, pos){ const w = OVR_W[pos]; return Math.round(a.pace*w[0] + a.shooting*w[1] + a.passing*w[2] + a.defending*w[3]); }
 function ovrOf(){ return calcOvr(P.attrs, P.pos); }
-function clubRating(){ const t=leagueTeams.find(x=>x.name===P.club); return t?t.rating:65; }
+function clubRating(){ if (natMatch) return 63; const t=leagueTeams.find(x=>x.name===P.club); return t?t.rating:65; }
 
 const LIFESTYLE_STORE = [
   { id: 'item1', name: '🧦 ถุงเท้าและสนับแข้งชุดใหม่', price: 1200 },
@@ -1065,7 +1066,8 @@ function checkMatchReady() {
 }
 
 function startLiveMatch() {
-  if (!hasTrainedThisWeek && !hasRestedThisWeek) return;
+  if (!natMatch && !hasTrainedThisWeek && !hasRestedThisWeek) return;
+  const fb = document.querySelector('#ratingSummaryBox button'); if (fb) fb.textContent = natMatch ? '➡️ ไปต่อ' : 'จบแมตช์ & ผ่านสัปดาห์';
 
   document.getElementById('matchPreNotice').classList.add('hidden');
   document.getElementById('liveStreamArea').classList.remove('hidden');
@@ -1081,14 +1083,16 @@ function startLiveMatch() {
   matchMinutesPlayed = 0;
   isPlayerWarmingUp = false;
   matchYellow = 0; matchRed = false; oppRed = false; matchSubbedOff = false;
-  const banned = (P.banWeeks || 0) > 0; matchBannedNow = banned; if (banned) { P.banWeeks--; alert('⛔ คุณถูกแบน นัดนี้ลงเล่นไม่ได้'); }
-  const benched = !banned && !(P.injuredWeeks > 0) && (P.benchWeeks || 0) > 0; if (benched) { P.benchWeeks--; alert('🪑 โค้ชให้คุณนั่งสำรองนัดนี้ เพราะฟอร์มไม่ดี'); }
+  const banned = !natMatch && (P.banWeeks || 0) > 0; matchBannedNow = banned; if (banned) { P.banWeeks--; alert('⛔ คุณถูกแบน นัดนี้ลงเล่นไม่ได้'); }
+  const benched = !natMatch && !banned && !(P.injuredWeeks > 0) && (P.benchWeeks || 0) > 0; if (benched) { P.benchWeeks--; alert('🪑 โค้ชให้คุณนั่งสำรองนัดนี้ เพราะฟอร์มไม่ดี'); }
 
   document.getElementById('scoreText').textContent = "0 - 0";
   document.getElementById('minuteText').textContent = "0'";
   document.getElementById('matchProgressBar').style.width = "0%";
 
-  if (!(P.injuredWeeks > 0) && !banned && !benched && (P.role === "ตัวจริง" || P.role === "กัปตันทีม" || P.role === "ตัวจริงเยาวชน")) {
+  if (natMatch) {
+    isPlayerOnField = natMatch.starter;
+  } else if (!(P.injuredWeeks > 0) && !banned && !benched && (P.role === "ตัวจริง" || P.role === "กัปตันทีม" || P.role === "ตัวจริงเยาวชน")) {
     isPlayerOnField = true;
   } else {
     isPlayerOnField = false;
@@ -1099,8 +1103,8 @@ function startLiveMatch() {
   addMatchLog(`0'`, `🏁 กรรมการเป่านกหวีดเริ่มการแข่งขัน!`, 'highlight');
 
   if (isPlayerOnField) {
-    addMatchLog(`0'`, `⚽ คุณลงสนามเป็น 11 ตัวจริงให้ ${P.club}!`, 'sub');
-    P.stats.apps++; P.season.apps++;
+    addMatchLog(`0'`, `⚽ คุณลงสนามเป็น 11 ตัวจริงให้ ${myName()}!`, 'sub');
+    if (!natMatch) { P.stats.apps++; P.season.apps++; }
   } else {
     addMatchLog(`0'`, P.injuredWeeks > 0 ? '🩹 คุณบาดเจ็บ ลงเล่นไม่ได้นัดนี้ (ต้องพักรักษาตัว)' : banned ? '⛔ คุณถูกแบน นั่งดูข้างสนามนัดนี้' : benched ? '🪑 โค้ชให้คุณนั่งสำรองนัดนี้ เพราะฟอร์มไม่ดี' : '🪑 คุณมีชื่อเป็นตัวสำรอง นั่งรอโอกาสข้างสนาม', 'log');
   }
@@ -1134,7 +1138,7 @@ function runMatchLoop() {
 
   if (!isPlayerOnField && isPlayerWarmingUp && !matchRed && currentMinute >= 65 && Math.random() < 0.1) {
     isPlayerOnField = true;
-    P.stats.apps++; P.season.apps++;
+    if (!natMatch) { P.stats.apps++; P.season.apps++; }
     addMatchLog(`${currentMinute}'`, `🔄 เปลี่ยนตัวลงสนาม! โค้ชส่งคุณลงทำเกมในครึ่งหลัง`, 'sub');
   }
 
@@ -1149,7 +1153,7 @@ function runMatchLoop() {
 }
 
 function sendOff(min, why, ban) {
-  matchRed = true; isPlayerOnField = false; P.banWeeks = Math.max(P.banWeeks || 0, ban); P.season.reds = (P.season.reds || 0) + 1;
+  matchRed = true; isPlayerOnField = false; if (!natMatch) P.banWeeks = Math.max(P.banWeeks || 0, ban); P.season.reds = (P.season.reds || 0) + 1;
   matchRating = Math.max(4, matchRating - 1.5); P.coachTrust = Math.max(0, P.coachTrust - 5);
   addMatchLog(`${min}'`, `🟥 ${why}! คุณโดนไล่ออกจากสนาม (แบน ${ban} นัด)`, 'alert');
 }
@@ -1335,6 +1339,7 @@ function addMatchLog(min, msg, type = 'log') {
 }
 
 function showMatchSummary() {
+  if (natMatch) { natSummary(); return; }
   if (matchMinutesPlayed > 0) {
     if (homeScore > awayScore) matchRating = Math.min(10, matchRating + 0.5); else if (homeScore < awayScore) matchRating = Math.max(4, matchRating - 0.3);
     if (awayScore === 0 && ['GK','CB','LB','RB','CDM'].includes(P.pos)) { matchRating = Math.min(10, matchRating + 0.6); P.coachTrust = Math.min(100, P.coachTrust + 2); addMatchLog("90'", '🧤 รักษาคลีนชีตได้!', 'highlight'); }
@@ -1367,6 +1372,7 @@ function showMatchSummary() {
 }
 
 function finishMatchDay() {
+  if (natMatch) { natContinue(); return; }
   if (matchMinutesPlayed > 0) P.fitness = Math.max(0, P.fitness - 15);
   P.bankBalance += agentHired ? Math.round(P.wage * 0.95) : P.wage;
   P.fitness = Math.min(100, P.fitness + 5);
@@ -1388,7 +1394,13 @@ function finishMatchDay() {
   if (agentHired && isTransferWindowOpen() && !agentOfferPending && Math.random() < 0.1) triggerAgentTransferOffer();
   simulateLeagueRound();
   currentWeek++;
-  if (currentWeek > 30) advanceSeason();
+  if (currentWeek > 30) {
+    if (startNationalTeam(() => { advanceSeason(); afterWeek(); })) return;
+    advanceSeason();
+  }
+  afterWeek();
+}
+function afterWeek() {
   if (agentOfferPending && !isTransferWindowOpen()) { agentOfferPending = null; document.getElementById('transferOfferBox').classList.add('hidden'); addAgentMessage('⌛ ตลาดปิดแล้ว ข้อเสนอที่ค้างอยู่หมดอายุ'); }
   hasTrainedThisWeek = false; hasRestedThisWeek = false;
   document.getElementById('liveStreamArea').classList.add('hidden');
@@ -1401,55 +1413,60 @@ const NAT_CUPS = {
   asean: { name: 'บอลอาเซียน', thr: 70, opps: ['เวียดนาม', 'มาเลเซีย', 'อินโดนีเซีย', 'สิงคโปร์', 'ฟิลิปปินส์', 'เมียนมา'], stages: ['รอบแบ่งกลุ่ม นัด 1', 'รอบแบ่งกลุ่ม นัด 2', 'รอบแบ่งกลุ่ม นัด 3', 'รอบรองชนะเลิศ', 'รอบชิงชนะเลิศ'] }
 };
 const VN_NAMES = ['เล ตวน คัง','ฟาม มินห์ ดึ๊ก','โฮ ก๊วก เวียด','ดั่ง ฮว่าง นาม','หวู่ ถั่น ฟง','บุ่ย กวาง ซอน','ตรัน ดิ่ง หลอก','ลือ ฮู ถั่ง','เจือง มินห์ ไห','ด่าว ซวน บาว'];
-function runNationalTeam() {
-  if (!isFirstTeam() || P.age < 18) return;
+let natMatch = null, natState = null;
+function myName() { return natMatch ? 'ทีมชาติไทย' : P.club; }
+function startNationalTeam(done) {
+  if (!isFirstTeam() || P.age < 18) return false;
   const cup = currentSeason % 2 === 0 ? NAT_CUPS.asean : NAT_CUPS.king;
   P.nat = P.nat || { caps: 0, goals: 0, assists: 0, titles: 0 };
   const o = ovrOf(), avg = P.season.rN ? P.season.rSum / P.season.rN : 0;
-  const called = o >= cup.thr && P.season.apps >= 10 && avg >= 6.2 && Math.random() < 0.85;
+  const called = !(P.injuredWeeks > 0) && o >= cup.thr && P.season.apps >= 10 && avg >= 6.2 && Math.random() < 0.85;
   const pool = leagueTeams.flatMap(t => squadOf(t).filter(x => x.r !== 'DF' || Math.random() < 0.5).map(x => ({ n: x.n, r: x.r, club: t.name }))).sort(() => Math.random() - 0.5);
   const squad = pool.slice(0, called ? 13 : 14);
-  const list = squad.map(x => `${x.n} (${x.club})`);
-  if (called) list.unshift(`🇹🇭 ${P.name} (${P.club})`);
+  const list = squad.map(x => `• ${x.n} (${x.club})`);
+  if (called) list.unshift(`• 🇹🇭 ${P.name} (${P.club})`);
   const title = `ทีมชาติไทยชุดลุย${cup.name} (ปีที่ ${currentSeason})`;
-  if (!called) { alert(`📣 ประกาศรายชื่อ${title}\n\n${list.map(x => '• ' + x).join('\n')}\n\nคุณยังไม่ได้รับเรียกครั้งนี้ ทำผลงานต่อไป (เกณฑ์: OVR ≥${cup.thr}, ลงเล่นให้สโมสร 10 นัดขึ้นไป และเรตติ้งเฉลี่ย 6.2+)`); return; }
-  alert(`🎉 ยินดีด้วย ${P.name}!\nคุณได้รับเรียกติดทีมชาติไทย ชุดลุย${cup.name}!\n\n📋 รายชื่อ:\n${list.map(x => '• ' + x).join('\n')}`);
-  const thai = 64 + (o - 66) * 0.15;
-  const pG = ({ ST: .35, LW: .25, RW: .25, CAM: .2, CM: .1, CDM: .05, LB: .05, RB: .05, CB: .05, GK: 0 }[P.pos]) * (0.6 + (o - 60) / 40) * 0.55;
-  const gen = x => { let n = 0; for (let i = 0; i < 9; i++) if (Math.random() < 0.15 + x * 0.004) n++; return n; };
-  const wt = x => x.r === 'FW' ? 4 : x.r === 'MF' ? 2 : 0.7;
-  const pickNat = () => { let r = Math.random() * squad.reduce((q, x) => q + wt(x), 0); for (const x of squad) { r -= wt(x); if (r <= 0) return x.n; } return squad[0].n; };
-  const opps = [...cup.opps].sort(() => Math.random() - 0.5).map(n => ({ n, r: 58 + Math.floor(Math.random() * 13) }));
-  const lines = []; let pts = 0, alive = true, champ = false, myG = 0, myA = 0, caps = 0, oi = 0;
-  cup.stages.forEach(stage => {
-    if (!alive) return;
-    const grp = stage.includes('แบ่งกลุ่ม');
-    if (stage === 'รอบรองชนะเลิศ' && cup === NAT_CUPS.asean && pts < 4) { alive = false; lines.push('❌ ตกรอบแบ่งกลุ่ม'); return; }
-    const op = opps[oi++ % opps.length]; let a = gen(thai - op.r), b = gen(op.r * -1 + thai), extra = '';
-    if (!grp && a === b) { if (Math.random() < 0.5) a++; else b++; extra = ' (ต่อเวลา)'; }
-    if (grp) pts += a > b ? 3 : a === b ? 1 : 0;
-    const plays = Math.random() < (o >= cup.thr + 3 ? 0.9 : 0.5);
-    if (plays) caps++;
-    const ev = [];
-    for (let i = 0; i < a; i++) {
-      const min = 1 + Math.floor(Math.random() * 89);
-      if (plays && Math.random() < pG) { myG++; ev.push([min, `🇹🇭 ⚽ คุณ ${min}'`]); }
-      else { let t = `🇹🇭 ⚽ ${pickNat()} ${min}'`; if (plays && Math.random() < pG * 0.6) { myA++; t += ' (แอสซิสต์: คุณ)'; } ev.push([min, t]); }
-    }
-    if (op.n === 'เวียดนาม') for (let i = 0; i < b; i++) { const min = 1 + Math.floor(Math.random() * 89); ev.push([min, `🇻🇳 ⚽ ${VN_NAMES[Math.floor(Math.random() * VN_NAMES.length)]} ${min}'`]); }
-    ev.sort((x, y) => x[0] - y[0]);
-    lines.push(`🇹🇭 ไทย ${a}-${b} ${op.n}${extra} [${stage}]${plays ? ' · คุณลงเล่น' : ''}` + ev.map(e => '\n     ' + e[1]).join(''));
-    if (!grp && a < b) { alive = false; lines.push('❌ ตกรอบ'); }
-    if (stage === 'รอบชิงชนะเลิศ' && a > b) champ = true;
-  });
-  P.nat.caps += caps; P.nat.goals += myG; P.nat.assists += myA;
-  P.fitness = Math.max(0, P.fitness - 15);
-  if (Math.random() < 0.03) { P.injuredWeeks = 1 + Math.floor(Math.random() * 2); lines.push('🩹 คุณบาดเจ็บระหว่างเกมทีมชาติ'); }
-  if (champ) { P.nat.titles++; trophiesWon.push({ name: `แชมป์${cup.name} (ทีมชาติไทย)`, year: currentSeason }); renderTrophies(); }
-  alert(`${champ ? '🏆 ไทยคว้าแชมป์' + cup.name + '!' : '📊 จบการแข่งขัน' + cup.name}\n\n${lines.join('\n')}\n\n🇹🇭 ผลงานของคุณ: ลงเล่น ${caps} นัด ${myG} ประตู ${myA} แอสซิสต์`);
+  if (!called) { alert(`📣 ประกาศรายชื่อ${title}\n\n${list.join('\n')}\n\nคุณยังไม่ได้รับเรียกครั้งนี้ ทำผลงานต่อไป (เกณฑ์: OVR ≥${cup.thr}, ลงเล่นให้สโมสร 10 นัดขึ้นไป, เรตติ้งเฉลี่ย 6.2+ และไม่บาดเจ็บ)`); return false; }
+  const opps = [...cup.opps].sort(() => Math.random() - 0.5).map(n => ({ n, r: 63 + Math.floor(Math.random() * 13) }));
+  natState = { cup, squad, opps, oi: 0, idx: 0, pts: 0, alive: true, champ: false, lines: [], caps: 0, g: 0, a: 0, done };
+  gameModal(`🎉 ยินดีด้วย ${P.name}!\nคุณได้รับเรียกติดทีมชาติไทย ชุดลุย${cup.name}!\n\n📋 รายชื่อ:\n${list.join('\n')}`, [{ label: '⚽ ไปร่วมทีมชาติ', cb: nextNatMatch }]);
+  return true;
+}
+function nextNatMatch() {
+  const st = natState, cup = st.cup;
+  if (st.idx >= cup.stages.length || !st.alive) return finishNational();
+  const stage = cup.stages[st.idx++];
+  if (stage === 'รอบรองชนะเลิศ' && cup === NAT_CUPS.asean && st.pts < 4) { st.alive = false; st.lines.push('❌ ตกรอบแบ่งกลุ่ม'); return finishNational(); }
+  const op = st.opps[st.oi++ % st.opps.length], o = ovrOf();
+  natMatch = { stage, grp: stage.includes('แบ่งกลุ่ม'), opName: op.n, starter: Math.random() < (o >= cup.thr + 3 ? 0.9 : 0.5),
+    team: { name: 'ทีมชาติไทย', squad: st.squad.map(x => ({ n: x.n, r: x.r, w: x.r === 'FW' ? 4 : x.r === 'MF' ? 2 : 0.7 })) } };
+  currentOpponent = { name: op.n, rating: op.r, noNames: op.n !== 'เวียดนาม', squad: VN_NAMES.map(n => ({ n, r: 'FW', w: 1 })) };
+  document.getElementById('homeName').textContent = 'ทีมชาติไทย'; document.getElementById('awayName').textContent = op.n;
+  document.getElementById('homeBadge').textContent = 'THA'; document.getElementById('awayBadge').textContent = op.n.slice(0, 3);
+  gameModal(`🇹🇭 ${cup.name} · ${stage}\nไทย พบ ${op.n} (เรตติ้ง ${op.r})\n\n${natMatch.starter ? '✅ คุณได้ลงเป็นตัวจริง' : '🪑 คุณอยู่ตัวสำรอง รอโอกาสจากม้านั่ง'}`, [{ label: '⚽ เริ่มแข่ง', cb: startLiveMatch }]);
+}
+function natSummary() {
+  const m = natMatch, st = natState; let extra = '';
+  if (!m.grp && homeScore === awayScore) { if (Math.random() < 0.5) homeScore++; else awayScore++; extra = ' (ต่อเวลา)'; document.getElementById('scoreText').textContent = `${homeScore} - ${awayScore}`; }
+  const win = homeScore > awayScore, played = matchMinutesPlayed > 0;
+  if (played) { P.nat.caps++; st.caps++; P.fitness = Math.max(0, P.fitness - 10); }
+  P.nat.goals += matchGoals; P.nat.assists += matchAssists; st.g += matchGoals; st.a += matchAssists;
+  if (m.grp) st.pts += win ? 3 : homeScore === awayScore ? 1 : 0; else if (!win) st.alive = false;
+  if (m.stage === 'รอบชิงชนะเลิศ' && win) st.champ = true;
+  st.lines.push(`🇹🇭 ไทย ${homeScore}-${awayScore} ${m.opName}${extra} [${m.stage}]${played ? ` · คุณ ${matchGoals}⚽ ${matchAssists}🅰️` : ''}`);
+  if (!m.grp && !win) st.lines.push('❌ ตกรอบ');
+  document.getElementById('ratingSummaryBox').classList.remove('hidden');
+  document.getElementById('resRating').textContent = played ? matchRating.toFixed(1) : 'N/A';
+  document.getElementById('resSummaryText').textContent = played ? `ลงสนาม ${matchMinutesPlayed} นาที | ยิง ${matchGoals} ประตู | ทำ ${matchAssists} แอสซิสต์` : 'คุณไม่ได้ลงสนามในเกมนี้';
+}
+function natContinue() { natMatch = null; nextNatMatch(); }
+function finishNational() {
+  const st = natState, cup = st.cup; natMatch = null;
+  if (st.champ) { P.nat.titles++; trophiesWon.push({ name: `แชมป์${cup.name} (ทีมชาติไทย)`, year: currentSeason }); renderTrophies(); }
+  if (Math.random() < 0.03) { P.injuredWeeks = 1 + Math.floor(Math.random() * 2); st.lines.push('🩹 คุณบาดเจ็บระหว่างเกมทีมชาติ'); }
+  gameModal(`${st.champ ? '🏆 ไทยคว้าแชมป์' + cup.name + '!' : '📊 จบการแข่งขัน' + cup.name}\n\n${st.lines.join('\n')}\n\n🇹🇭 ผลงานของคุณรายการนี้: ลงเล่น ${st.caps} นัด ${st.g} ประตู ${st.a} แอสซิสต์`, [{ label: 'ตกลง', cb: () => { natState = null; st.done(); } }]);
 }
 function advanceSeason() {
-  runNationalTeam();
   if (tbl()[0].name === P.club && P.season.apps >= 10) {
     let tName = isFirstTeam() ? "แชมป์ ฟุตบอลไทยลีก 1" : "แชมป์ ไทย Youth League (U18)";
     alert(`🏆 ยินดีด้วย! สโมสร ${P.club} คว้า ${tName} ประจำฤดูกาล!`);
