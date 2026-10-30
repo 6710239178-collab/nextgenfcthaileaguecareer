@@ -220,6 +220,10 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
 .score-display{white-space:nowrap;letter-spacing:0!important}
 #decDesc{white-space:pre-line;line-height:1.5}
 #statTabs button{flex:1 1 0;min-width:0;width:auto!important}
+#nextGoalText{white-space:pre-line}
+.live-scoreboard.away-view > div[style*="space-around"] > div:nth-child(1){order:3}
+.live-scoreboard.away-view > div[style*="space-around"] > div:nth-child(2){order:2}
+.live-scoreboard.away-view > div[style*="space-around"] > div:nth-child(3){order:1}
 </style>
 </head>
 <body>
@@ -374,12 +378,6 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
             <button class="btn-red hidden" id="btnRetire" style="margin-top:12px;" onclick="retireCareer()">🛑 ประกาศรีไทร์เลิกเล่นอาชีพ</button>
           </div>
         </div>
-        <div class="card" id="reqCard">
-          <div class="card-header"><div class="card-title">📝 ขอย้ายทีม</div></div>
-          <div id="reqInfo" style="font-size:13px; color:var(--text-muted); margin-bottom:10px;"></div>
-          <select id="reqClub" class="form-select" style="margin-bottom:10px;"></select>
-          <button class="btn-gold" id="btnReq" onclick="requestTransfer()">📨 ยื่นเสนอตัว</button>
-        </div>
       </div>
 
       <!-- AGENT TAB -->
@@ -402,6 +400,13 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
               </div>
             </div>
           </div>
+        </div>
+      
+        <div class="card" id="reqCard">
+          <div class="card-header"><div class="card-title">📝 ยื่นขอย้ายทีม</div></div>
+          <div id="reqInfo" style="font-size:13px; color:var(--text-muted); margin-bottom:10px;"></div>
+          <select id="reqClub" class="form-select" style="margin-bottom:10px;"></select>
+          <button class="btn-gold" id="btnReq" onclick="requestTransfer()">📨 ยื่นเสนอตัว</button>
         </div>
       </div>
 
@@ -719,6 +724,11 @@ const ROLE_WAGE = {"สำรองอคาเดมี่":2000,"ตัวจ�
 const POS_STATS = {ST:['shooting','pace','passing'],LW:['pace','shooting','passing'],RW:['pace','shooting','passing'],CAM:['passing','shooting','pace'],CM:['passing','defending','pace'],CB:['defending','passing','pace'],CDM:['defending','passing','pace'],LB:['pace','defending','passing'],RB:['pace','defending','passing'],GK:['shooting','defending','pace']};
 const OVR_W = { ST:[.3,.4,.2,.1], LW:[.35,.25,.25,.15], RW:[.35,.25,.25,.15], CAM:[.2,.3,.4,.1], CM:[.2,.2,.35,.25], CDM:[.2,.15,.3,.35], LB:[.3,.15,.25,.3], RB:[.3,.15,.25,.3], CB:[.25,.15,.25,.35], GK:[.3,.3,.1,.3] };
 function calcOvr(a, pos){ const w = OVR_W[pos]; return Math.round(a.pace*w[0] + a.shooting*w[1] + a.passing*w[2] + a.defending*w[3]); }
+function isStarPlayer() {
+  const t = tbl().find(x => x.name === P.club); if (!t) return false;
+  const top = squadOf(t).reduce((m, pl) => Math.max(m, pl.g || 0), 0);
+  return P.season.goals >= 3 && P.season.goals >= top;
+}
 function ovrOf(){ return calcOvr(P.attrs, P.pos); }
 function clubRating(){ if (natMatch) return 63; const t=leagueTeams.find(x=>x.name===P.club); return t?t.rating:65; }
 
@@ -853,7 +863,7 @@ function updateDashboardUI() {
   document.getElementById('hudAge').textContent = `${P.age} ปี`;
   document.getElementById('hudFitness').textContent = `${P.fitness}%`;
   document.getElementById('hudWeek').textContent = `ปี ${currentSeason} (${currentWeek}/30)`;
-  document.getElementById('hudRole').textContent = P.role + (P.injuredWeeks > 0 ? ` 🩹(${P.injuredWeeks})` : '') + (P.banWeeks > 0 ? ` ⛔(${P.banWeeks})` : '') + (P.benchWeeks > 0 ? ` 🪑(${P.benchWeeks})` : '');
+  document.getElementById('hudRole').textContent = P.role + (P.injuredWeeks > 0 ? ` 🩹(${P.injuredWeeks})` : '') + (P.banWeeks > 0 ? ` ⛔(${P.banWeeks})` : '') + (P.benchWeeks > 0 ? ` 🪑(${P.benchWeeks})` : '') + (isStarPlayer() ? ' ⭐' : '');
 
   document.getElementById('stApps').textContent = P.season.apps;
   document.getElementById('stGoals').textContent = P.season.goals;
@@ -927,6 +937,7 @@ function doWeeklyTraining() {
   if (Math.random() < cfg.i) { P.injuredWeeks = 1 + Math.floor(Math.random() * 2); msg += `\n🩹 ซ้อมหนักจนบาดเจ็บ! พัก ${P.injuredWeeks} สัปดาห์`; }
   alert(msg);
   updateDashboardUI();
+  setScoreboardSide();
   checkMatchReady();
 }
 
@@ -1084,6 +1095,18 @@ function renderTrophies() {
 }
 
 /* ================= MATCH ENGINE & PRE-MATCH ================= */
+function setScoreText() { document.getElementById('scoreText').textContent = (isHome || natMatch) ? `${homeScore} - ${awayScore}` : `${awayScore} - ${homeScore}`; }
+function setScoreboardSide() { const b = document.querySelector('.live-scoreboard'); if (b) b.classList.toggle('away-view', !isHome && !natMatch); }
+let fixtures = [], fixKey = '';
+function buildFixtures() {
+  const names = tbl().filter(t => t.name !== P.club).map(t => t.name), shuf = a => a.slice().sort(() => Math.random() - 0.5);
+  const first = shuf(names); let second = shuf(names);
+  if (second[0] === first[first.length - 1]) second.push(second.shift());
+  const homes = shuf(names.map((_, i) => i < Math.ceil(names.length / 2))), hm = {};
+  first.forEach((n, i) => hm[n] = homes[i]);
+  fixtures = first.map(n => ({ n, h: hm[n] })).concat(second.map(n => ({ n, h: !hm[n] })));
+  fixKey = currentSeason + '|' + P.club + '|' + (isFirstTeam() ? 'F' : 'Y');
+}
 function prepareNextMatch() {
   isCupMatch = false;
 
@@ -1092,11 +1115,10 @@ function prepareNextMatch() {
     cupRoundText = currentWeek === 24 ? "รอบชิงชนะเลิศ (Final)" : currentWeek === 18 ? "รอบรองชนะเลิศ" : currentWeek === 12 ? "รอบก่อนรองชนะเลิศ" : "รอบแรก";
   }
 
-  let opponentsPool = tbl().filter(t => t.name !== P.club);
-  let oppIndex = (currentWeek - 1) % opponentsPool.length;
-  currentOpponent = opponentsPool[oppIndex] || opponentsPool[0];
-
-  isHome = currentWeek % 2 === 1;
+  if (!fixtures.length || fixKey !== currentSeason + '|' + P.club + '|' + (isFirstTeam() ? 'F' : 'Y')) buildFixtures();
+  const fx = fixtures[(currentWeek - 1) % fixtures.length];
+  currentOpponent = tbl().find(t => t.name === fx.n) || tbl().find(t => t.name !== P.club);
+  isHome = fx.h;
   let leagueName = isFirstTeam() ? "ฟุตบอลไทยลีก 1" : "ไทย Youth League (U18)";
   let teamSuffix = isFirstTeam() ? "" : " U18";
 
@@ -1110,6 +1132,7 @@ function prepareNextMatch() {
   document.getElementById('awayName').textContent = currentOpponent.name;
   document.getElementById('awayBadge').textContent = currentOpponent.code || "OPP";
 
+  setScoreboardSide();
   checkMatchReady();
 }
 
@@ -1129,6 +1152,7 @@ function checkMatchReady() {
 function startLiveMatch() {
   if (!natMatch && !hasTrainedThisWeek && !hasRestedThisWeek) return;
   const fb = document.querySelector('#ratingSummaryBox button'); if (fb) fb.textContent = natMatch ? '➡️ ไปต่อ' : 'จบแมตช์ & ผ่านสัปดาห์';
+  setScoreboardSide();
 
   document.getElementById('matchPreNotice').classList.add('hidden');
   document.getElementById('liveStreamArea').classList.remove('hidden');
@@ -1238,11 +1262,11 @@ function simulateMinuteEvent(min) {
   let ap = Math.max(0.006, Math.min(0.03, 0.0135 - diff * 0.0004));
   if (Math.random() < hp) {
     homeScore++;
-    document.getElementById('scoreText').textContent = `${homeScore} - ${awayScore}`;
+    setScoreText();
     addMatchLog(`${min}'`, `⚽ GOAL! ${ownGoalText()}`, 'highlight');
   } else if (Math.random() < ap) {
     awayScore++;
-    document.getElementById('scoreText').textContent = `${homeScore} - ${awayScore}`;
+    setScoreText();
     addMatchLog(`${min}'`, `🚨 GOAL! ${pickScorer(currentOpponent, 'g')} (${currentOpponent.name}) ยิงประตู`, 'alert');
   }
 }
@@ -1365,7 +1389,7 @@ function makeChoice(i) {
   if (currentMinute >= 70) { if (homeScore < awayScore && c.r === 'R') p += 0.08; else if (homeScore > awayScore && c.r === 'S') p += 0.08; }
   p = Math.max(0.08, Math.min(0.92, p));
   const t = `${currentMinute}'`;
-  const score = () => document.getElementById('scoreText').textContent = `${homeScore} - ${awayScore}`;
+  const score = () => setScoreText();
   if (Math.random() < p) {
     card.classList.add('flash-gold'); setTimeout(() => card.classList.remove('flash-gold'), 800);
     if (c.ok === 'GOAL') {
@@ -1508,7 +1532,7 @@ function nextNatMatch() {
 }
 function natSummary() {
   const m = natMatch, st = natState; let extra = '';
-  if (!m.grp && homeScore === awayScore) { if (Math.random() < 0.5) homeScore++; else awayScore++; extra = ' (ต่อเวลา)'; document.getElementById('scoreText').textContent = `${homeScore} - ${awayScore}`; }
+  if (!m.grp && homeScore === awayScore) { if (Math.random() < 0.5) homeScore++; else awayScore++; extra = ' (ต่อเวลา)'; setScoreText(); }
   const win = homeScore > awayScore, played = matchMinutesPlayed > 0;
   if (played) { P.nat.caps++; st.caps++; P.fitness = Math.max(0, P.fitness - 10); }
   P.nat.goals += matchGoals; P.nat.assists += matchAssists; st.g += matchGoals; st.a += matchAssists;
@@ -1694,7 +1718,7 @@ const SAVE_KEY = 'nextgenfc_save_v1';
 function saveGame() {
   if (!P || P.retired) return;
   try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 1, P, currentSeason, currentWeek, hasTrainedThisWeek, hasRestedThisWeek, leagueTeams, youthTeams, div2Teams, agentHired, cupAlive, ownedItems, trophiesWon, usedScen, savedAt: Date.now() }));
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 1, P, currentSeason, currentWeek, hasTrainedThisWeek, hasRestedThisWeek, leagueTeams, youthTeams, div2Teams, fixtures, fixKey, agentHired, cupAlive, ownedItems, trophiesWon, usedScen, savedAt: Date.now() }));
   } catch (e) {}
 }
 function readSave() {
@@ -1705,7 +1729,7 @@ function loadGame() {
   if (!d) { alert('ไม่พบข้อมูลเซฟ'); return; }
   P = d.P; currentSeason = d.currentSeason; currentWeek = d.currentWeek;
   hasTrainedThisWeek = d.hasTrainedThisWeek; hasRestedThisWeek = d.hasRestedThisWeek;
-  leagueTeams = d.leagueTeams; youthTeams = d.youthTeams || leagueTeams.map(t => ({ ...t, p:0, w:0, d:0, l:0, pts:0, gf:0, ga:0 })); div2Teams = d.div2Teams || div2Teams; agentHired = d.agentHired; cupAlive = d.cupAlive;
+  leagueTeams = d.leagueTeams; fixtures = d.fixtures || []; fixKey = d.fixKey || ''; youthTeams = d.youthTeams || leagueTeams.map(t => ({ ...t, p:0, w:0, d:0, l:0, pts:0, gf:0, ga:0 })); div2Teams = d.div2Teams || div2Teams; agentHired = d.agentHired; cupAlive = d.cupAlive;
   ownedItems = d.ownedItems; trophiesWon = d.trophiesWon;
   usedScen.length = 0; (d.usedScen || []).forEach(x => usedScen.push(x));
   document.getElementById('inPos').value = P.pos; applyLabels();
