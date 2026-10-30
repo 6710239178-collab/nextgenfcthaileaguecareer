@@ -619,7 +619,7 @@ function setStatView(v) { statView = v; renderLeagueTable(); }
 function playerStatsHTML(table, lvl) {
   const key = statView === 'goals' ? 'g' : 'a', POS = { FW: 'กองหน้า', MF: 'กองกลาง', DF: 'กองหลัง' }, rows = [];
   table.forEach(tm => squadOf(tm).forEach(pl => rows.push({ n: pl.n, club: tm.name, pos: POS[pl.r], v: pl[key] || 0 })));
-  if ((lvl === 'first' && isFirstTeam()) || (lvl === 'youth' && !isFirstTeam())) rows.push({ n: P.name + ' (คุณ)', club: P.club, pos: P.pos, v: key === 'g' ? P.season.goals : P.season.assists, me: true });
+  if ((lvl === 'first' && isFirstTeam()) || (lvl === 'youth' && !isFirstTeam())) rows.push({ n: P.name + (isStarPlayer() ? ' ⭐' : '') + ' (คุณ)', club: P.club, pos: P.pos, v: key === 'g' ? P.season.goals : P.season.assists, me: true });
   rows.sort((a, b) => b.v - a.v);
   let rank = 0, prev = null;
   return rows.slice(0, 15).map((r, i) => { if (r.v !== prev) { rank = i + 1; prev = r.v; } return `<div style="display:flex; align-items:center; gap:10px; padding:10px 6px; border-bottom:1px solid rgba(255,255,255,.12);${r.me ? ' background:rgba(255,210,63,.2); border-radius:10px;' : ''}"><div style="width:26px; text-align:center; color:var(--text-muted);">${rank}</div><div style="flex:1; min-width:0;"><div style="font-weight:700;">${r.n}</div><div style="font-size:12px; color:var(--text-muted);">${r.club} · ${r.pos}</div></div><div style="font-family:var(--font-title); font-size:20px; color:var(--accent-gold);">${r.v}</div></div>`; }).join('');
@@ -724,10 +724,12 @@ const ROLE_WAGE = {"สำรองอคาเดมี่":2000,"ตัวจ�
 const POS_STATS = {ST:['shooting','pace','passing'],LW:['pace','shooting','passing'],RW:['pace','shooting','passing'],CAM:['passing','shooting','pace'],CM:['passing','defending','pace'],CB:['defending','passing','pace'],CDM:['defending','passing','pace'],LB:['pace','defending','passing'],RB:['pace','defending','passing'],GK:['shooting','defending','pace']};
 const OVR_W = { ST:[.3,.4,.2,.1], LW:[.35,.25,.25,.15], RW:[.35,.25,.25,.15], CAM:[.2,.3,.4,.1], CM:[.2,.2,.35,.25], CDM:[.2,.15,.3,.35], LB:[.3,.15,.25,.3], RB:[.3,.15,.25,.3], CB:[.25,.15,.25,.35], GK:[.3,.3,.1,.3] };
 function calcOvr(a, pos){ const w = OVR_W[pos]; return Math.round(a.pace*w[0] + a.shooting*w[1] + a.passing*w[2] + a.defending*w[3]); }
-function isStarPlayer() {
+function meLabel() { return P.name + (!natMatch && isStarPlayer(matchGoals) ? ' ⭐' : ''); }
+function isStarPlayer(extra) {
   const t = tbl().find(x => x.name === P.club); if (!t) return false;
   const top = squadOf(t).reduce((m, pl) => Math.max(m, pl.g || 0), 0);
-  return P.season.goals >= 3 && P.season.goals >= top;
+  const g = P.season.goals + (extra || 0);
+  return g >= 3 && g >= top;
 }
 function ovrOf(){ return calcOvr(P.attrs, P.pos); }
 function clubRating(){ if (natMatch) return 63; const t=leagueTeams.find(x=>x.name===P.club); return t?t.rating:65; }
@@ -1394,10 +1396,10 @@ function makeChoice(i) {
     card.classList.add('flash-gold'); setTimeout(() => card.classList.remove('flash-gold'), 800);
     if (c.ok === 'GOAL') {
       homeScore++; matchGoals++; matchRating = Math.min(10, matchRating + 1.2); P.coachTrust = Math.min(100, P.coachTrust + 3); score();
-      addMatchLog(t, `🌟 SUCCESS! ${c.t} ... เข้าประตู! (+1 ประตู)${Math.random() < 0.5 ? ' · แอสซิสต์: ' + pickScorer(myTeam(), 'a') : ''}`, 'highlight');
+      addMatchLog(t, `⚽ GOAL! ${meLabel()} (${myName()}) ยิงประตู!${Math.random() < 0.5 ? ' แอสซิสต์: ' + pickScorer(myTeam(), 'a') : ''}`, 'highlight');
     } else if (c.ok === 'ASSIST') {
       homeScore++; matchAssists++; matchRating = Math.min(10, matchRating + 1.0); P.coachTrust = Math.min(100, P.coachTrust + 2); score();
-      addMatchLog(t, `🌟 SUCCESS! ${c.t} ... ${pickScorer(myTeam(), 'g')} จบสกอร์! (+1 แอสซิสต์)`, 'highlight');
+      addMatchLog(t, `⚽ GOAL! ${pickScorer(myTeam(), 'g')} (${myName()}) ยิงประตู! แอสซิสต์: ${meLabel()}`, 'highlight');
     } else {
       matchRating = Math.min(10, matchRating + (c.r === 'S' ? 0.3 : c.r === 'N' ? 0.6 : 0.9)); P.coachTrust = Math.min(100, P.coachTrust + 2);
       addMatchLog(t, `✅ ${c.r === 'S' ? 'ปลอดภัย' : 'สำเร็จ'}! ${c.t}`, 'highlight');
