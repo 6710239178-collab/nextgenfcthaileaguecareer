@@ -224,6 +224,21 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
 .live-scoreboard.away-view > div[style*="space-around"] > div:nth-child(1){order:3}
 .live-scoreboard.away-view > div[style*="space-around"] > div:nth-child(2){order:2}
 .live-scoreboard.away-view > div[style*="space-around"] > div:nth-child(3){order:1}
+
+/* ===== Dropdown ตาราง ===== */
+.dd-row{display:flex;gap:10px;padding:6px 0 12px;align-items:flex-start}
+.dd{position:relative;flex:1 1 0;min-width:0}
+.dd.dd-view{flex:1.25 1 0}
+.dd-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:6px;background:#fff;color:#14306b;border:5px solid #8fa8e8;border-radius:20px;padding:9px 10px;font-family:var(--font-title);font-size:15px;font-weight:700;cursor:pointer;text-align:left;-webkit-tap-highlight-color:transparent}
+.dd-btn .dd-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:opacity .18s ease}
+.dd-btn .dd-label.fade{opacity:0}
+.dd-btn svg{flex-shrink:0;transition:transform .2s ease}
+.dd.open .dd-btn svg{transform:rotate(180deg)}
+.dd-menu{position:absolute;left:0;right:0;top:calc(100% + 6px);background:#fff;border:4px solid #8fa8e8;border-radius:18px;overflow:hidden;z-index:40;box-shadow:0 10px 24px rgba(0,0,0,.35);opacity:0;transform:translateY(-6px) scale(.98);pointer-events:none;transition:opacity .18s ease,transform .18s ease}
+.dd.open .dd-menu{opacity:1;transform:none;pointer-events:auto}
+.dd-item{padding:12px 14px;color:#14306b;font-family:var(--font-title);font-size:15px;font-weight:600;cursor:pointer;border-bottom:1px solid #e3eafc}
+.dd-item:last-child{border-bottom:0}
+.dd-item.sel{background:#e8efff;font-weight:700}
 </style>
 </head>
 <body>
@@ -528,8 +543,7 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
       <div id="tab-table" class="view-panel">
         <div class="card">
           <div class="card-header"><div class="card-title" id="tableTitleText">📊 ตารางคะแนน ไทย Youth League (U18)</div></div>
-          <div id="tableTabs" style="display:flex; gap:6px; padding:8px 0; flex-wrap:wrap;"></div>
-          <div id="statTabs" style="display:flex; gap:6px; padding:0 0 8px; flex-wrap:wrap;"></div>
+          <div id="tblDropdowns" class="dd-row"></div>
           <div id="playerStatsList"></div>
           <div class="tbl-wrap" id="tblWrap"><table class="league-table">
             <thead><tr><th>#</th><th>สโมสร</th><th>ลง</th><th>ชนะ</th><th>เสมอ</th><th>แพ้</th><th>+/-</th><th>แต้ม</th></tr></thead>
@@ -1709,12 +1723,44 @@ function runPromotionRelegation() {
 }
 
 function setTableView(v) { tableView = v; renderLeagueTable(); }
-function renderLeagueTable() {
+const DD_VIEW = [['table','📊','ตารางคะแนน'],['goals','⚽','Top Scorers'],['assists','🅰️','Top Assists']];
+const DD_LEAGUE = [['youth','','U18'],['first','','ไทยลีก 1'],['div2','','ไทยลีก 2']];
+let ddOpenKey = null;
+const CHEV = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#14306b" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+function ddLabel(o) { return (o[1] ? o[1] + ' ' : '') + o[2]; }
+function buildDropdowns() {
+  const box = document.getElementById('tblDropdowns');
+  if (!box || box.dataset.built) return;
+  const mk = (key, cls, opts, fn) => `<div class="dd ${cls}" id="dd-${key}"><button type="button" class="dd-btn" onclick="toggleDD('${key}', event)"><span class="dd-label" id="ddl-${key}"></span>${CHEV}</button><div class="dd-menu">${opts.map(o => `<div class="dd-item" data-v="${o[0]}" onclick="${fn}('${o[0]}')">${ddLabel(o)}</div>`).join('')}</div></div>`;
+  box.innerHTML = mk('view', 'dd-view', DD_VIEW, 'pickView') + mk('league', 'dd-league', DD_LEAGUE, 'pickLeague');
+  box.dataset.built = '1';
+  document.addEventListener('click', e => { if (ddOpenKey && !e.target.closest('.dd')) closeDD(); });
+}
+function toggleDD(key, ev) {
+  if (ev) ev.stopPropagation();
+  const was = ddOpenKey === key;
+  closeDD();
+  if (!was) { document.getElementById('dd-' + key).classList.add('open'); ddOpenKey = key; }
+}
+function closeDD() { document.querySelectorAll('.dd.open').forEach(d => d.classList.remove('open')); ddOpenKey = null; }
+function ddSet(key, opts, cur, animate) {
+  const lab = document.getElementById('ddl-' + key), o = opts.find(x => x[0] === cur) || opts[0], txt = ddLabel(o);
+  document.querySelectorAll('#dd-' + key + ' .dd-item').forEach(el => el.classList.toggle('sel', el.dataset.v === cur));
+  if (lab.textContent === txt) return;
+  if (!animate || !lab.textContent) { lab.textContent = txt; return; }
+  lab.classList.add('fade');
+  setTimeout(() => { lab.textContent = txt; lab.classList.remove('fade'); }, 180);
+}
+function pickView(v) { statView = v; closeDD(); renderLeagueTable(true); }
+function pickLeague(v) { tableView = v; closeDD(); renderLeagueTable(true); }
+function renderLeagueTable(animate) {
   const lvl = tableView || (isFirstTeam() ? 'first' : 'youth');
   const t = lvl === 'first' ? leagueTeams : lvl === 'div2' ? div2Teams : youthTeams;
   document.getElementById('tableTitleText').textContent = lvl === 'first' ? '📊 ฟุตบอลไทยลีก 1' : lvl === 'div2' ? '📊 ไทยลีก 2 (ลีกรอง)' : '📊 ไทย Youth League (U18)';
-  document.getElementById('tableTabs').innerHTML = [['youth','U18'],['first','ไทยลีก 1'],['div2','ไทยลีก 2']].map(([k, n]) => `<button class="${lvl === k ? 'btn-gold' : 'btn-blue'}" style="padding:6px 12px; font-size:13px; border-bottom-width:4px;" onclick="setTableView('${k}')">${n}</button>`).join('');
-  document.getElementById('statTabs').innerHTML = [['table','📊 ตารางคะแนน'],['goals','⚽ ดาวซัลโว'],['assists','🅰️ แอสซิสต์']].map(([k, n]) => `<button class="${statView === k ? 'btn-gold' : 'btn-blue'}" style="padding:6px 10px; font-size:13px; border-bottom-width:4px;" onclick="setStatView('${k}')">${n}</button>`).join('');
+  buildDropdowns();
+  ddSet('view', DD_VIEW, statView, animate === true);
+  ddSet('league', DD_LEAGUE, lvl, animate === true);
+  document.getElementById('dd-league').style.display = statView === 'table' ? '' : 'none';
   document.getElementById('tblWrap').style.display = statView === 'table' ? '' : 'none';
   document.getElementById('playerStatsList').innerHTML = statView === 'table' ? '' : playerStatsHTML(t, lvl);
   document.getElementById('leagueTableBody').innerHTML = t.map((x, idx) => {
