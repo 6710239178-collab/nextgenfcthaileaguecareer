@@ -219,6 +219,7 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
 #homeName,#awayName{max-width:100%!important;font-size:12px!important}
 .score-display{white-space:nowrap;letter-spacing:0!important}
 #decDesc{white-space:pre-line;line-height:1.5}
+#statTabs button{flex:1 1 0;min-width:0;width:auto!important}
 </style>
 </head>
 <body>
@@ -373,6 +374,12 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
             <button class="btn-red hidden" id="btnRetire" style="margin-top:12px;" onclick="retireCareer()">🛑 ประกาศรีไทร์เลิกเล่นอาชีพ</button>
           </div>
         </div>
+        <div class="card" id="reqCard">
+          <div class="card-header"><div class="card-title">📝 ขอย้ายทีม</div></div>
+          <div id="reqInfo" style="font-size:13px; color:var(--text-muted); margin-bottom:10px;"></div>
+          <select id="reqClub" class="form-select" style="margin-bottom:10px;"></select>
+          <button class="btn-gold" id="btnReq" onclick="requestTransfer()">📨 ยื่นเสนอตัว</button>
+        </div>
       </div>
 
       <!-- AGENT TAB -->
@@ -448,7 +455,11 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
           </div>
         </div>
         <div class="card">
-          <div class="card-header"><div class="card-title">🏆 ถ้วยรางวัลและเกียรติยศ (Trophy Cabinet)</div></div>
+          <div class="card-header"><div class="card-title">🏅 รางวัลส่วนตัว</div></div>
+          <div id="awardList"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">🏆 ถ้วยรางวัลสโมสร</div></div>
           <div id="trophyContainer"></div>
         </div>
       </div>
@@ -513,7 +524,9 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
         <div class="card">
           <div class="card-header"><div class="card-title" id="tableTitleText">📊 ตารางคะแนน ไทย Youth League (U18)</div></div>
           <div id="tableTabs" style="display:flex; gap:6px; padding:8px 0; flex-wrap:wrap;"></div>
-          <div class="tbl-wrap"><table class="league-table">
+          <div id="statTabs" style="display:flex; gap:6px; padding:0 0 8px; flex-wrap:wrap;"></div>
+          <div id="playerStatsList"></div>
+          <div class="tbl-wrap" id="tblWrap"><table class="league-table">
             <thead><tr><th>#</th><th>สโมสร</th><th>ลง</th><th>ชนะ</th><th>เสมอ</th><th>แพ้</th><th>+/-</th><th>แต้ม</th></tr></thead>
             <tbody id="leagueTableBody"></tbody>
           </table></div>
@@ -596,7 +609,16 @@ let leagueTeams = [
 const DIV2_NAMES = ['อ่างทอง เอฟซี','อุดรธานี เอฟซี','เชียงราย ซิตี้','สมุทรปราการ ซิตี้','นครศรี ยูไนเต็ด','ลพบุรี เอฟซี','พัทลุง เอฟซี','หนองบัวพิชญะ','สุพรรณบุรี เอฟซี','ชลบุรี ซิตี้'];
 let div2Teams = DIV2_NAMES.map((n, i) => ({ name: n, code: 'D2', rating: 54 + ((i * 3) % 7), p:0, w:0, d:0, l:0, pts:0, gf:0, ga:0 }));
 let youthTeams = leagueTeams.map(t => ({ ...t }));
-let tableView = null;
+let tableView = null, statView = 'table';
+function setStatView(v) { statView = v; renderLeagueTable(); }
+function playerStatsHTML(table, lvl) {
+  const key = statView === 'goals' ? 'g' : 'a', POS = { FW: 'กองหน้า', MF: 'กองกลาง', DF: 'กองหลัง' }, rows = [];
+  table.forEach(tm => squadOf(tm).forEach(pl => rows.push({ n: pl.n, club: tm.name, pos: POS[pl.r], v: pl[key] || 0 })));
+  if ((lvl === 'first' && isFirstTeam()) || (lvl === 'youth' && !isFirstTeam())) rows.push({ n: P.name + ' (คุณ)', club: P.club, pos: P.pos, v: key === 'g' ? P.season.goals : P.season.assists, me: true });
+  rows.sort((a, b) => b.v - a.v);
+  let rank = 0, prev = null;
+  return rows.slice(0, 15).map((r, i) => { if (r.v !== prev) { rank = i + 1; prev = r.v; } return `<div style="display:flex; align-items:center; gap:10px; padding:10px 6px; border-bottom:1px solid rgba(255,255,255,.12);${r.me ? ' background:rgba(255,210,63,.2); border-radius:10px;' : ''}"><div style="width:26px; text-align:center; color:var(--text-muted);">${rank}</div><div style="flex:1; min-width:0;"><div style="font-weight:700;">${r.n}</div><div style="font-size:12px; color:var(--text-muted);">${r.club} · ${r.pos}</div></div><div style="font-family:var(--font-title); font-size:20px; color:var(--accent-gold);">${r.v}</div></div>`; }).join('');
+}
 let matchBannedNow = false;
 let matchSubbedOff = false;
 let matchStarted = false;
@@ -614,10 +636,13 @@ function genSquad() {
   return out;
 }
 function ownGoalText() {
-  const t = myTeam(), a = pickScorer(t); let b = pickScorer(t);
-  for (let i = 0; i < 8 && b === a; i++) b = pickScorer(t);
-  return `${a} (${myName()}) ยิงประตู!${Math.random() < 0.5 && b !== a ? ' แอสซิสต์: ' + b : ''}`;
+  const t = myTeam(), a = pickPlayer(t), credit = !isCupMatch && !natMatch, star = pl => pl.senior && !youthTeams.includes(t) ? ' ⭐' : '';
+  if (credit) a.g = (a.g || 0) + 1;
+  let txt = `${a.n}${star(a)} (${myName()}) ยิงประตู!`;
+  if (Math.random() < 0.5) { const b = pickPlayer(t, a); if (credit) b.a = (b.a || 0) + 1; txt += ' แอสซิสต์: ' + b.n + star(b); }
+  return txt;
 }
+
 function squadOf(t) {
   if (!t.squadFixed && SQUAD_DATA[t.name]) {
     const d = SQUAD_DATA[t.name][youthTeams.includes(t) ? 'youth' : 'first'];
@@ -631,15 +656,50 @@ function squadOf(t) {
   }
   return t.squad;
 }
-function pickScorer(t) {
-  if (t.noNames) return 'ผู้เล่น';
-  const sq = squadOf(t); let x = Math.random() * sq.reduce((a, b) => a + b.w, 0);
-  for (const pl of sq) { x -= pl.w; if (x <= 0) return pl.n + (pl.senior && !youthTeams.includes(t) ? ' ⭐' : ''); }
-  return sq[0].n;
+function pickPlayer(t, ex) {
+  const sq = squadOf(t).filter(x => x !== ex);
+  let x = Math.random() * sq.reduce((a, b) => a + b.w, 0);
+  for (const pl of sq) { x -= pl.w; if (x <= 0) return pl; }
+  return sq[0];
 }
+function pickScorer(t, kind) {
+  if (t.noNames) return 'ผู้เล่น';
+  const pl = pickPlayer(t);
+  if (kind && !isCupMatch && !natMatch) pl[kind] = (pl[kind] || 0) + 1;
+  return pl.n + (pl.senior && !youthTeams.includes(t) ? ' ⭐' : '');
+}
+function creditSim(t, n) {
+  for (let i = 0; i < n; i++) { const g = pickPlayer(t); g.g = (g.g || 0) + 1; if (Math.random() < 0.7) { const a = pickPlayer(t, g); a.a = (a.a || 0) + 1; } }
+}
+
 function seniorsOf(t) { const y = youthTeams.includes(t); return squadOf(t).filter(x => y ? x.r === 'FW' : x.senior).slice(0, 2).map(x => x.n).join(', '); }
 function myTeam() { if (natMatch) return natMatch.team; return tbl().find(t => t.name === P.club) || div2Teams.find(t => t.name === P.club) || leagueTeams[0]; }
+let lastReq = { s: 0, w: 0 };
+function renderTransferRequest() {
+  const sel = document.getElementById('reqClub'); if (!sel) return;
+  if (sel.dataset.club !== P.club) { sel.dataset.club = P.club; sel.innerHTML = leagueTeams.filter(t => t.name !== P.club).map(t => `<option value="${t.name}">${t.name} (เรตติ้ง ${t.rating})</option>`).join(''); }
+  const open = isTransferWindowOpen(), moved = P.movedSeason === currentSeason, done = lastReq.s === currentSeason && lastReq.w === currentWeek;
+  document.getElementById('reqInfo').textContent = !open ? '🔒 ตลาดปิดอยู่ ยื่นขอย้ายไม่ได้ (เปิดสัปดาห์ 1-6 และ 15-18)' : moved ? '⛔ ย้ายทีมแล้วในปีนี้ ย้ายอีกไม่ได้' : done ? '⏳ ยื่นไปแล้วสัปดาห์นี้ รอสัปดาห์หน้า' : `🟢 ตลาดเปิดอยู่ เลือกสโมสรที่สนใจแล้วยื่นเสนอตัว${isFirstTeam() ? '' : ' (ในฐานะนักเตะอคาเดมี่ จะไปทีมเยาวชนของสโมสรนั้น)'}`;
+  document.getElementById('btnReq').disabled = !open || moved || done;
+}
+function requestTransfer() {
+  if (!isTransferWindowOpen() || P.movedSeason === currentSeason) return;
+  const t = leagueTeams.find(x => x.name === document.getElementById('reqClub').value); if (!t) return;
+  lastReq = { s: currentSeason, w: currentWeek };
+  const o = ovrOf(), avg = P.season.rN ? P.season.rSum / P.season.rN : 6.2;
+  const chance = Math.max(0.05, Math.min(0.9, 0.45 + (o + 6 - t.rating) * 0.04 + (avg - 6.3) * 0.15 + (agentHired ? 0.1 : 0) + (P.coachTrust >= 60 ? 0.05 : 0)));
+  renderTransferRequest();
+  if (Math.random() >= chance) { alert(`📨 ${t.name} ปฏิเสธข้อเสนอของคุณ\nเหตุผล: ${o + 6 < t.rating ? 'ระดับฝีมือยังห่างจากที่ทีมต้องการ' : 'ทีมยังไม่พร้อมรับนักเตะเพิ่มตอนนี้'}\n\nลองสโมสรอื่น หรือยื่นใหม่สัปดาห์หน้า`); return; }
+  const first = isFirstTeam();
+  const pro = !first && P.coachTrust >= 70 && o >= 60 && P.age >= 17 && (P.season.goals + P.season.assists) >= 3 && P.season.apps >= 8;
+  agentOfferPending = t; agentOfferPro = pro; agentOfferYears = 1 + Math.floor(Math.random() * 3);
+  agentOfferWage = first ? Math.min(400000, Math.round(P.wage * 1.2)) : pro ? ROLE_WAGE["ดาวรุ่งชุดใหญ่"] : Math.round(P.wage * 1.25);
+  const w = `ค่าเหนื่อย ฿${agentOfferWage.toLocaleString()}/สัปดาห์`;
+  const what = first ? `สัญญา ${agentOfferYears} ฤดูกาล · ${w}` : pro ? `สัญญาอาชีพทีมชุดใหญ่ ${agentOfferYears} ฤดูกาล · ${w}` : `ย้ายไปทีมเยาวชน (อคาเดมี่) · ${w}`;
+  gameConfirm(`✅ ${t.name} ตอบรับ!\n${what}\nเรตติ้งทีม ${t.rating}\n\nต้องการย้ายไปไหม?`, '✍️ ย้ายเลย', 'ไม่ไปแล้ว', () => acceptTransfer(), () => { agentOfferPending = null; });
+}
 function renderCareerStats() {
+  renderAwards();
   const st = P.stats, avg = st.rN ? (st.rSum / st.rN).toFixed(1) : '-';
   const box = (v, l) => `<div style="background:rgba(10,25,70,.55); padding:12px; border-radius:12px; text-align:center;"><div style="font-family:var(--font-title); font-size:20px; color:var(--accent-gold);">${v}</div><div style="font-size:11px; color:var(--text-muted);">${l}</div></div>`;
   document.getElementById('careerTotals').innerHTML = box(st.apps, 'นัดรวม') + box(st.goals, 'ประตูรวม') + box(st.assists, 'แอสซิสต์รวม') + box(avg, 'เรตติ้งเฉลี่ย') + (P.nat ? `<div style="grid-column:1/-1; font-size:12px; color:var(--text-muted);">🇹🇭 ทีมชาติ: ${P.nat.caps} นัด · ${P.nat.goals} ประตู · ${P.nat.assists} แอสซิสต์ · ${P.nat.titles} แชมป์</div>` : '');
@@ -799,6 +859,7 @@ function updateDashboardUI() {
   document.getElementById('stGoals').textContent = P.season.goals;
   document.getElementById('stAssists').textContent = P.season.assists;
   renderCareerStats();
+  renderTransferRequest();
   document.getElementById('coachTrustText').textContent = `${P.coachTrust} / 100`;
 
   document.getElementById('infoVal').textContent = `฿${P.marketValue.toLocaleString()}`;
@@ -1182,7 +1243,7 @@ function simulateMinuteEvent(min) {
   } else if (Math.random() < ap) {
     awayScore++;
     document.getElementById('scoreText').textContent = `${homeScore} - ${awayScore}`;
-    addMatchLog(`${min}'`, `🚨 GOAL! ${pickScorer(currentOpponent)} (${currentOpponent.name}) ยิงประตู`, 'alert');
+    addMatchLog(`${min}'`, `🚨 GOAL! ${pickScorer(currentOpponent, 'g')} (${currentOpponent.name}) ยิงประตู`, 'alert');
   }
 }
 
@@ -1309,10 +1370,10 @@ function makeChoice(i) {
     card.classList.add('flash-gold'); setTimeout(() => card.classList.remove('flash-gold'), 800);
     if (c.ok === 'GOAL') {
       homeScore++; matchGoals++; matchRating = Math.min(10, matchRating + 1.2); P.coachTrust = Math.min(100, P.coachTrust + 3); score();
-      addMatchLog(t, `🌟 SUCCESS! ${c.t} ... เข้าประตู! (+1 ประตู)${Math.random() < 0.5 ? ' · แอสซิสต์: ' + pickScorer(myTeam()) : ''}`, 'highlight');
+      addMatchLog(t, `🌟 SUCCESS! ${c.t} ... เข้าประตู! (+1 ประตู)${Math.random() < 0.5 ? ' · แอสซิสต์: ' + pickScorer(myTeam(), 'a') : ''}`, 'highlight');
     } else if (c.ok === 'ASSIST') {
       homeScore++; matchAssists++; matchRating = Math.min(10, matchRating + 1.0); P.coachTrust = Math.min(100, P.coachTrust + 2); score();
-      addMatchLog(t, `🌟 SUCCESS! ${c.t} ... ${pickScorer(myTeam())} จบสกอร์! (+1 แอสซิสต์)`, 'highlight');
+      addMatchLog(t, `🌟 SUCCESS! ${c.t} ... ${pickScorer(myTeam(), 'g')} จบสกอร์! (+1 แอสซิสต์)`, 'highlight');
     } else {
       matchRating = Math.min(10, matchRating + (c.r === 'S' ? 0.3 : c.r === 'N' ? 0.6 : 0.9)); P.coachTrust = Math.min(100, P.coachTrust + 2);
       addMatchLog(t, `✅ ${c.r === 'S' ? 'ปลอดภัย' : 'สำเร็จ'}! ${c.t}`, 'highlight');
@@ -1324,7 +1385,7 @@ function makeChoice(i) {
     addMatchLog(t, `❌ FAILED! ${c.t} ... พลาด`, 'alert');
     if (c.f === 'CONCEDE' && Math.random() < 0.5) {
       awayScore++; score();
-      addMatchLog(t, `🚨 GOAL! ${pickScorer(currentOpponent)} (${currentOpponent.name}) ทำประตูจากความผิดพลาดของเรา`, 'alert');
+      addMatchLog(t, `🚨 GOAL! ${pickScorer(currentOpponent, 'g')} (${currentOpponent.name}) ทำประตูจากความผิดพลาดของเรา`, 'alert');
     }
   }
   matchTimer = setInterval(runMatchLoop, 500);
@@ -1466,7 +1527,29 @@ function finishNational() {
   if (Math.random() < 0.03) { P.injuredWeeks = 1 + Math.floor(Math.random() * 2); st.lines.push('🩹 คุณบาดเจ็บระหว่างเกมทีมชาติ'); }
   gameModal(`${st.champ ? '🏆 ไทยคว้าแชมป์' + cup.name + '!' : '📊 จบการแข่งขัน' + cup.name}\n\n${st.lines.join('\n')}\n\n🇹🇭 ผลงานของคุณรายการนี้: ลงเล่น ${st.caps} นัด ${st.g} ประตู ${st.a} แอสซิสต์`, [{ label: 'ตกลง', cb: () => { natState = null; st.done(); } }]);
 }
+function computeAwards() {
+  P.awards = P.awards || [];
+  const table = tbl(), lvl = isFirstTeam() ? 'ไทยลีก 1' : 'Youth League U18', rows = [];
+  table.forEach(t => squadOf(t).forEach(pl => rows.push({ n: pl.n, club: t.name, g: pl.g || 0, a: pl.a || 0 })));
+  const topG = rows.reduce((m, r) => r.g > m.g ? r : m, { g: -1 }), topA = rows.reduce((m, r) => r.a > m.a ? r : m, { a: -1 });
+  const mg = P.season.goals, ma = P.season.assists, avg = P.season.rN ? P.season.rSum / P.season.rN : 0, lines = [], won = [];
+  const topC = rows.reduce((m, r) => r.g + r.a > m.c ? { ...r, c: r.g + r.a } : m, { c: -1 });
+  const winG = mg > 0 && mg >= topG.g, winA = ma > 0 && ma >= topA.a, winM = mg + ma > 0 && mg + ma >= topC.c;
+  lines.push(`⚽ ดาวซัลโว${lvl}: ${winG ? P.name + ' (คุณ)' : topG.n + ' (' + topG.club + ')'} · ${Math.max(mg, topG.g)} ประตู`);
+  lines.push(`🅰️ ยอดเพลย์เมคเกอร์${lvl}: ${winA ? P.name + ' (คุณ)' : topA.n + ' (' + topA.club + ')'} · ${Math.max(ma, topA.a)} แอสซิสต์`);
+  lines.push(`⭐ นักเตะยอดเยี่ยมแห่งปี${lvl}: ${winM ? P.name + ' (คุณ)' : topC.n + ' (' + topC.club + ')'} · ${Math.max(mg + ma, topC.c)} ประตู+แอสซิสต์`);
+  if (winG) { P.awards.push({ name: `ดาวซัลโว${lvl}`, year: currentSeason, detail: `${mg} ประตู` }); won.push('ดาวซัลโว'); }
+  if (winA) { P.awards.push({ name: `ยอดเพลย์เมคเกอร์${lvl}`, year: currentSeason, detail: `${ma} แอสซิสต์` }); won.push('ยอดเพลย์เมคเกอร์'); }
+  if (winM) { P.awards.push({ name: `นักเตะยอดเยี่ยมแห่งปี ${lvl}`, year: currentSeason, detail: `${mg} ประตู ${ma} แอสซิสต์` }); won.push('นักเตะยอดเยี่ยมแห่งปี'); }
+  alert(`🏅 รางวัลประจำฤดูกาล (ปีที่ ${currentSeason})\n\n${lines.join('\n')}${won.length ? '\n\n🎉 ยินดีด้วย! คุณได้รับรางวัล: ' + won.join(', ') : ''}`);
+}
+function renderAwards() {
+  const el = document.getElementById('awardList'); if (!el) return;
+  const a = P.awards || [];
+  el.innerHTML = a.length ? a.slice().reverse().map(x => `<div style="padding:10px 6px; border-bottom:1px solid rgba(255,255,255,.12);">🏅 <b>${x.name}</b><div style="font-size:12px; color:var(--text-muted);">ปีที่ ${x.year} · ${x.detail}</div></div>`).join('') : '<div style="color:var(--text-muted); padding:10px;">ยังไม่มีรางวัลส่วนตัว ลองทำประตูหรือแอสซิสต์ให้มากที่สุดในลีก</div>';
+}
 function advanceSeason() {
+  computeAwards();
   if (tbl()[0].name === P.club && P.season.apps >= 10) {
     let tName = isFirstTeam() ? "แชมป์ ฟุตบอลไทยลีก 1" : "แชมป์ ไทย Youth League (U18)";
     alert(`🏆 ยินดีด้วย! สโมสร ${P.club} คว้า ${tName} ประจำฤดูกาล!`);
@@ -1476,7 +1559,7 @@ function advanceSeason() {
   (P.history = P.history || []).push({ season: currentSeason, age: P.age, club: P.club, apps: P.season.apps, goals: P.season.goals, assists: P.season.assists, rating: P.season.rN ? +(P.season.rSum / P.season.rN).toFixed(1) : 0, pos: tbl().findIndex(t => t.name === P.club) + 1 });
   currentSeason++; currentWeek = 1; P.age++;
   runPromotionRelegation();
-  [leagueTeams, youthTeams, div2Teams].forEach(tb => tb.forEach(t => { t.p = t.w = t.d = t.l = t.pts = 0; t.gf = 0; t.ga = 0; t.rating = Math.max(50, Math.min(80, t.rating + Math.floor(Math.random() * 5) - 2)); }));
+  [leagueTeams, youthTeams, div2Teams].forEach(tb => tb.forEach(t => { t.p = t.w = t.d = t.l = t.pts = 0; t.gf = 0; t.ga = 0; if (t.squad) t.squad.forEach(pl => { pl.g = 0; pl.a = 0; }); t.rating = Math.max(50, Math.min(80, t.rating + Math.floor(Math.random() * 5) - 2)); }));
   cupAlive = true; P.season = { apps: 0, goals: 0, assists: 0, yellows: 0, reds: 0, rSum: 0, rN: 0 };
   alert(`📅 จบฤดูกาล! เข้าสู่ปีที่ ${currentSeason} (อายุ ${P.age} ปี)`);
   if (P.age >= 31) {
@@ -1514,7 +1597,8 @@ function playRound(table, userInvolved) {
   if (me && op) res(me, op, homeScore, awayScore);
   for (let i = 0; i + 1 < rest.length; i += 2) {
     const d = rest[i].rating - rest[i + 1].rating;
-    res(rest[i], rest[i + 1], goals(d), goals(-d));
+    const ga = goals(d), gb = goals(-d);
+    res(rest[i], rest[i + 1], ga, gb); creditSim(rest[i], ga); creditSim(rest[i + 1], gb);
   }
   table.sort((a, b) => (b.pts - a.pts) || ((b.gf || 0) - (b.ga || 0)) - ((a.gf || 0) - (a.ga || 0)));
 }
@@ -1544,6 +1628,9 @@ function renderLeagueTable() {
   const t = lvl === 'first' ? leagueTeams : lvl === 'div2' ? div2Teams : youthTeams;
   document.getElementById('tableTitleText').textContent = lvl === 'first' ? '📊 ฟุตบอลไทยลีก 1' : lvl === 'div2' ? '📊 ไทยลีก 2 (ลีกรอง)' : '📊 ไทย Youth League (U18)';
   document.getElementById('tableTabs').innerHTML = [['youth','U18'],['first','ไทยลีก 1'],['div2','ไทยลีก 2']].map(([k, n]) => `<button class="${lvl === k ? 'btn-gold' : 'btn-blue'}" style="padding:6px 12px; font-size:13px; border-bottom-width:4px;" onclick="setTableView('${k}')">${n}</button>`).join('');
+  document.getElementById('statTabs').innerHTML = [['table','📊 ตารางคะแนน'],['goals','⚽ ดาวซัลโว'],['assists','🅰️ แอสซิสต์']].map(([k, n]) => `<button class="${statView === k ? 'btn-gold' : 'btn-blue'}" style="padding:6px 10px; font-size:13px; border-bottom-width:4px;" onclick="setStatView('${k}')">${n}</button>`).join('');
+  document.getElementById('tblWrap').style.display = statView === 'table' ? '' : 'none';
+  document.getElementById('playerStatsList').innerHTML = statView === 'table' ? '' : playerStatsHTML(t, lvl);
   document.getElementById('leagueTableBody').innerHTML = t.map((x, idx) => {
     const mark = lvl === 'first' && idx >= t.length - 2 ? ' ⬇️' : lvl === 'div2' && idx < 2 ? ' ⬆️' : '';
     return `<tr class="${x.name === P?.club && ((lvl === 'first') === isFirstTeam() || lvl === 'div2') ? 'my-team' : ''}"><td><b>${idx + 1}</b></td><td>${x.name}${lvl === 'youth' ? ' U18' : ''}${mark}</td><td>${x.p}</td><td>${x.w}</td><td>${x.d}</td><td>${x.l}</td><td>${(x.gf || 0) - (x.ga || 0)}</td><td><b>${x.pts}</b></td></tr>`;
