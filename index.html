@@ -619,7 +619,7 @@ function setStatView(v) { statView = v; renderLeagueTable(); }
 function playerStatsHTML(table, lvl) {
   const key = statView === 'goals' ? 'g' : 'a', POS = { FW: 'กองหน้า', MF: 'กองกลาง', DF: 'กองหลัง' }, rows = [];
   table.forEach(tm => squadOf(tm).forEach(pl => rows.push({ n: pl.n, club: tm.name, pos: POS[pl.r], v: pl[key] || 0 })));
-  if ((lvl === 'first' && isFirstTeam()) || (lvl === 'youth' && !isFirstTeam())) rows.push({ n: P.name + (isStarPlayer() ? ' ⭐' : '') + ' (คุณ)', club: P.club, pos: P.pos, v: key === 'g' ? P.season.goals : P.season.assists, me: true });
+  if ((lvl === 'first' && isFirstTeam()) || (lvl === 'youth' && !isFirstTeam())) rows.push({ n: P.name, club: P.club, pos: P.pos, v: key === 'g' ? P.season.goals : P.season.assists, me: true });
   rows.sort((a, b) => b.v - a.v);
   let rank = 0, prev = null;
   return rows.slice(0, 15).map((r, i) => { if (r.v !== prev) { rank = i + 1; prev = r.v; } return `<div style="display:flex; align-items:center; gap:10px; padding:10px 6px; border-bottom:1px solid rgba(255,255,255,.12);${r.me ? ' background:rgba(255,210,63,.2); border-radius:10px;' : ''}"><div style="width:26px; text-align:center; color:var(--text-muted);">${rank}</div><div style="flex:1; min-width:0;"><div style="font-weight:700;">${r.n}</div><div style="font-size:12px; color:var(--text-muted);">${r.club} · ${r.pos}</div></div><div style="font-family:var(--font-title); font-size:20px; color:var(--accent-gold);">${r.v}</div></div>`; }).join('');
@@ -1244,7 +1244,66 @@ function sendOff(min, why, ban) {
   matchRating = Math.max(4, matchRating - 1.5); P.coachTrust = Math.max(0, P.coachTrust - 5);
   addMatchLog(`${min}'`, `🟥 ${why}! คุณโดนไล่ออกจากสนาม (แบน ${ban} นัด)`, 'alert');
 }
+const PEN_OPTS = [
+  { t: 'ยิงเข้ามุมซ้ายบน', where: 'มุมซ้ายบน', side: 'L', h: 'H' }, { t: 'ชิปลูกกลางประตู (ปาเนนก้า)', where: 'กลางประตู (ชิป)', side: 'C', h: 'H', chip: true }, { t: 'ยิงเข้ามุมขวาบน', where: 'มุมขวาบน', side: 'R', h: 'H' },
+  { t: 'ยิงเข้ามุมซ้ายล่าง', where: 'มุมซ้ายล่าง', side: 'L', h: 'L' }, { t: 'ยิงตรงกลางประตู', where: 'กลางประตู', side: 'C', h: 'L' }, { t: 'ยิงเข้ามุมขวาล่าง', where: 'มุมขวาล่าง', side: 'R', h: 'L' }
+];
+function penLeaders(t) { const sq = squadOf(t), sen = sq.filter(x => x.senior); return sen.length ? sen : sq.filter(x => x.r === 'FW').slice(0, 2); }
+function penName(pl, t) { return pl.n + (pl.senior && !youthTeams.includes(t) ? ' ⭐' : ''); }
+function pickPenaltyTaker(t) {
+  const lead = penLeaders(t), att = ['ST', 'LW', 'RW', 'CAM'].includes(P.pos), meOk = isPlayerOnField && !matchRed && isStarPlayer(matchGoals);
+  if (meOk && att) return { me: true };
+  const cands = lead.map(x => ({ pl: x, w: x.r === 'FW' ? 5 : x.r === 'MF' ? 3 : 1 }));
+  if (meOk) cands.push({ me: true, w: 2 });
+  let r = Math.random() * cands.reduce((a, c) => a + c.w, 0);
+  for (const c of cands) { r -= c.w; if (r <= 0) return c; }
+  return cands[0];
+}
+function triggerPenalty(min) {
+  const t = myTeam(), tk = pickPenaltyTaker(t);
+  if (!tk.me) {
+    const pl = tk.pl, r = Math.random(), where = ['มุมซ้ายบน', 'มุมขวาบน', 'มุมซ้ายล่าง', 'มุมขวาล่าง', 'กลางประตู'][Math.floor(Math.random() * 5)];
+    if (r < 0.78) { homeScore++; setScoreText(); if (!isCupMatch) pl.g = (pl.g || 0) + 1; addMatchLog(`${min}'`, `⚽ GOAL! ${penName(pl, t)} (${myName()}) ยิงจุดโทษเข้า${where}!`, 'highlight'); }
+    else if (r < 0.9) addMatchLog(`${min}'`, `🧤 ผู้รักษาประตูเซฟจุดโทษของ ${penName(pl, t)} ได้!`, 'alert');
+    else addMatchLog(`${min}'`, `❌ ${penName(pl, t)} ยิงจุดโทษพลาดเฉียดเสาออกไป`, 'alert');
+    return;
+  }
+  clearInterval(matchTimer);
+  const meEarn = ['ST', 'LW', 'RW', 'CAM', 'CM'].includes(P.pos) && Math.random() < 0.3;
+  const earnTxt = meEarn ? 'คุณถูกทำฟาวล์ในเขตโทษ' : `${penName(pickPlayer(t), t)} ถูกทำฟาวล์ในเขตโทษ`;
+  const who = Math.random() < 0.5 ? 'โค้ช' : `กัปตันทีม ${penLeaders(t)[0].n}`;
+  addMatchLog(`${min}'`, `🚨 ทีมได้จุดโทษ! ${earnTxt}`, 'highlight');
+  gameModal(`🚨 ทีมได้จุดโทษ!\n\n${earnTxt}\n\n⭐ ${who}ให้คุณรับหน้าที่ยิงจุดโทษ\n\n📊 ${homeScore > awayScore ? 'นำ' : homeScore < awayScore ? 'ตามหลัง' : 'เสมอ'} ${homeScore}-${awayScore} · นาทีที่ ${min}`, [{ label: '🥅 ไปยิงจุดโทษ', cb: () => penaltyChoices(min) }]);
+}
+function penaltyChoices(min) {
+  curChoices = PEN_OPTS.map(o => ({ ...o, pen: true }));
+  document.getElementById('decisionBox').classList.remove('hidden');
+  document.getElementById('decTitle').textContent = `🥅 (${min}') จุดโทษ! เลือกมุมที่จะยิง`;
+  document.getElementById('decDesc').textContent = 'บอลวางอยู่บนจุดโทษ ผู้รักษาประตูกำลังเตรียมพุ่ง ทุกมุมเสี่ยงต่างกัน ยิงสูงเสี่ยงพลาด ยิงล่างเสี่ยงโดนเซฟ';
+  document.getElementById('decChoices').innerHTML = curChoices.map((c, i) => `<div class="choice-btn" onclick="makeChoice(${i})">${c.t}</div>`).join('');
+}
+function penaltyShot(c) {
+  document.getElementById('decisionBox').classList.add('hidden');
+  const tm = `${currentMinute}'`, r = Math.random(), dive = r < 0.4 ? 'L' : r < 0.8 ? 'R' : 'C';
+  let miss = (c.h === 'H' ? 0.16 : c.side === 'C' ? 0.04 : 0.07) - (P.attrs.shooting - 60) * 0.002 + (c.chip ? 0.08 : 0);
+  miss = Math.max(0.02, miss);
+  let res = 'goal';
+  if (Math.random() < miss) res = 'miss';
+  else if (dive === c.side || (c.chip && dive === 'C')) { if (Math.random() < (c.chip ? 0.85 : c.h === 'H' ? 0.18 : c.side === 'C' ? 0.9 : 0.5)) res = 'save'; }
+  if (res === 'goal') {
+    homeScore++; matchGoals++; matchRating = Math.min(10, matchRating + 1.2); P.coachTrust = Math.min(100, P.coachTrust + 3); setScoreText();
+    addMatchLog(tm, `⚽ GOAL! ${meLabel()} (${myName()}) ยิงจุดโทษเข้า${c.where}!`, 'highlight');
+  } else if (res === 'save') {
+    matchRating = Math.max(4, matchRating - 0.6); P.coachTrust = Math.max(0, P.coachTrust - 2);
+    addMatchLog(tm, `🧤 ผู้รักษาประตูเซฟจุดโทษของ ${meLabel()} ได้! (ยิง${c.where})`, 'alert');
+  } else {
+    matchRating = Math.max(4, matchRating - 0.9); P.coachTrust = Math.max(0, P.coachTrust - 3);
+    addMatchLog(tm, `❌ ${meLabel()} ยิงจุดโทษ${c.h === 'H' ? 'สูงเกินคานออกไป' : 'เฉียดเสาออกไป'}!`, 'alert');
+  }
+  matchTimer = setInterval(runMatchLoop, 500);
+}
 function simulateMinuteEvent(min) {
+  if (!natMatch && !matchRed && min >= 3 && min <= 88 && Math.random() < 0.0005) { triggerPenalty(min); return; }
   if (isPlayerOnField && !matchRed) {
     const dm = ['CB','CDM','LB','RB','CM'].includes(P.pos) ? 1.8 : 1;
     if (Math.random() < 0.0009 * dm) {
@@ -1381,6 +1440,7 @@ function triggerPlayerDecision(min) {
 
 function makeChoice(i) {
   const c = curChoices[i];
+  if (c.pen) { penaltyShot(c); return; }
   const box = document.getElementById('decisionBox');
   const card = document.getElementById('matchLiveCard');
   box.classList.add('hidden');
@@ -1561,9 +1621,9 @@ function computeAwards() {
   const mg = P.season.goals, ma = P.season.assists, avg = P.season.rN ? P.season.rSum / P.season.rN : 0, lines = [], won = [];
   const topC = rows.reduce((m, r) => r.g + r.a > m.c ? { ...r, c: r.g + r.a } : m, { c: -1 });
   const winG = mg > 0 && mg >= topG.g, winA = ma > 0 && ma >= topA.a, winM = mg + ma > 0 && mg + ma >= topC.c;
-  lines.push(`⚽ ดาวซัลโว${lvl}: ${winG ? P.name + ' (คุณ)' : topG.n + ' (' + topG.club + ')'} · ${Math.max(mg, topG.g)} ประตู`);
-  lines.push(`🅰️ ยอดเพลย์เมคเกอร์${lvl}: ${winA ? P.name + ' (คุณ)' : topA.n + ' (' + topA.club + ')'} · ${Math.max(ma, topA.a)} แอสซิสต์`);
-  lines.push(`⭐ นักเตะยอดเยี่ยมแห่งปี${lvl}: ${winM ? P.name + ' (คุณ)' : topC.n + ' (' + topC.club + ')'} · ${Math.max(mg + ma, topC.c)} ประตู+แอสซิสต์`);
+  lines.push(`⚽ ดาวซัลโว${lvl}: ${winG ? P.name : topG.n + ' (' + topG.club + ')'} · ${Math.max(mg, topG.g)} ประตู`);
+  lines.push(`🅰️ ยอดเพลย์เมคเกอร์${lvl}: ${winA ? P.name : topA.n + ' (' + topA.club + ')'} · ${Math.max(ma, topA.a)} แอสซิสต์`);
+  lines.push(`⭐ นักเตะยอดเยี่ยมแห่งปี${lvl}: ${winM ? P.name : topC.n + ' (' + topC.club + ')'} · ${Math.max(mg + ma, topC.c)} ประตู+แอสซิสต์`);
   if (winG) { P.awards.push({ name: `ดาวซัลโว${lvl}`, year: currentSeason, detail: `${mg} ประตู` }); won.push('ดาวซัลโว'); }
   if (winA) { P.awards.push({ name: `ยอดเพลย์เมคเกอร์${lvl}`, year: currentSeason, detail: `${ma} แอสซิสต์` }); won.push('ยอดเพลย์เมคเกอร์'); }
   if (winM) { P.awards.push({ name: `นักเตะยอดเยี่ยมแห่งปี ${lvl}`, year: currentSeason, detail: `${mg} ประตู ${ma} แอสซิสต์` }); won.push('นักเตะยอดเยี่ยมแห่งปี'); }
