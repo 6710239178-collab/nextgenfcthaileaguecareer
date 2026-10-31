@@ -449,6 +449,12 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
           <h4 style="margin-bottom:12px; font-size:14px; color:var(--text-muted);">ค่าพลังปัจจุบันของคุณ</h4>
           <div id="attributesListGrid" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"></div>
         </div>
+        <div class="card" id="posCard">
+          <div class="card-header"><div class="card-title">📋 คุยกับโค้ชเรื่องตำแหน่ง</div></div>
+          <div id="posInfo" style="font-size:13px; color:var(--text-muted); margin-bottom:10px; white-space:pre-line;"></div>
+          <select id="posSel" class="form-select" style="margin-bottom:10px;"></select>
+          <button class="btn-gold" id="btnPos" onclick="requestPosChange()">🗣️ ขอย้ายตำแหน่ง</button>
+        </div>
       </div>
 
       <!-- LIFESTYLE TAB -->
@@ -708,6 +714,7 @@ function requestTransfer() {
   const o = ovrOf(), avg = P.season.rN ? P.season.rSum / P.season.rN : 6.2;
   const chance = Math.max(0.05, Math.min(0.9, 0.45 + (o + 6 - t.rating) * 0.04 + (avg - 6.3) * 0.15 + (agentHired ? 0.1 : 0) + (P.coachTrust >= 60 ? 0.05 : 0)));
   renderTransferRequest();
+  renderPosChange();
   if (Math.random() >= chance) { alert(`📨 ${t.name} ปฏิเสธข้อเสนอของคุณ\nเหตุผล: ${o + 6 < t.rating ? 'ระดับฝีมือยังห่างจากที่ทีมต้องการ' : 'ทีมยังไม่พร้อมรับนักเตะเพิ่มตอนนี้'}\n\nลองสโมสรอื่น หรือยื่นใหม่สัปดาห์หน้า`); return; }
   const first = isFirstTeam();
   const pro = !first && P.coachTrust >= 70 && o >= 60 && P.age >= 17 && (P.season.goals + P.season.assists) >= 3 && P.season.apps >= 8;
@@ -744,6 +751,63 @@ function isStarPlayer(extra) {
   const top = squadOf(t).reduce((m, pl) => Math.max(m, pl.g || 0), 0);
   const g = P.season.goals + (extra || 0);
   return g >= 3 && g >= top;
+}
+const POS_ADJ = { ST: ['LW', 'RW', 'CAM'], LW: ['ST', 'RW', 'CAM', 'LB'], RW: ['ST', 'LW', 'CAM', 'RB'], CAM: ['ST', 'LW', 'RW', 'CM'], CM: ['CAM', 'CDM'], CDM: ['CM', 'CB'], CB: ['CDM', 'LB', 'RB'], LB: ['CB', 'LW', 'RB'], RB: ['CB', 'RW', 'LB'], GK: [] };
+const POS_TH = { ST: 'กองหน้า', LW: 'ปีกซ้าย', RW: 'ปีกขวา', CAM: 'กองกลางตัวรุก', CM: 'กองกลาง', CDM: 'กองกลางตัวรับ', LB: 'แบ็กซ้าย', RB: 'แบ็กขวา', CB: 'กองหลังตัวกลาง', GK: 'ผู้รักษาประตู' };
+function goalKind(t) { return /โหม่ง/.test(t) ? 'head' : /ยิงไกล|จากนอกเขตโทษ|จากขอบเขตโทษ/.test(t) ? 'long' : ''; }
+function styleOf() { return P.style = P.style || { g: 0, head: 0, long: 0 }; }
+function styleBonus(to) {
+  const s = styleOf(), from = P.pos, hr = s.g ? s.head / s.g : 0, lr = s.g ? s.long / s.g : 0;
+  if (to === 'ST' && ['LW', 'RW', 'CAM'].includes(from) && s.head >= 3 && hr >= 0.25) return { b: 0.15, why: `ตลอดอาชีพยิงจากการโหม่งถึง ${s.head} ลูก (${Math.round(hr * 100)}% ของประตู) เล่นเหมือนกองหน้าตัวเป้ามากกว่า` };
+  if (['CAM', 'CM'].includes(to) && ['ST', 'LW', 'RW', 'CAM'].includes(from) && s.long >= 3 && lr >= 0.25) return { b: 0.1, why: `ตลอดอาชีพยิงไกลเข้า ${s.long} ลูก (${Math.round(lr * 100)}% ของประตู) เหมาะกับกองกลางที่ยิงไกลได้` };
+  return { b: 0, why: '' };
+}
+function posCooldownMsg() {
+  if (P.posReq === currentSeason) return 'ปีนี้คุยกับโค้ชเรื่องตำแหน่งไปแล้ว ขอได้อีกครั้งปีหน้า';
+  if (P.posLast && currentSeason - P.posLast < 2) return `เพิ่งย้ายตำแหน่งมา ต้องรอจนถึงปีที่ ${P.posLast + 2} ถึงจะขอใหม่ได้`;
+  return '';
+}
+function renderPosChange() {
+  const sel = document.getElementById('posSel'); if (!sel) return;
+  const cur = ovrOf(), opts = POS_ADJ[P.pos] || [], keep = sel.value;
+  sel.innerHTML = opts.map(t => { const o = calcOvr(P.attrs, t); return `<option value="${t}">${t} ${POS_TH[t]} · OVR ที่ตำแหน่งนี้ ${o} (${o >= cur ? '+' : ''}${o - cur})</option>`; }).join('');
+  if (opts.includes(keep)) sel.value = keep;
+  const cd = posCooldownMsg();
+  let info = `ตำแหน่งตอนนี้: ${P.pos} ${POS_TH[P.pos]} (OVR ${cur})`;
+  if (!opts.length) info += '\nผู้รักษาประตูย้ายตำแหน่งไม่ได้';
+  else if (cd) info += '\n⏳ ' + cd;
+  else info += '\nขอย้ายได้เฉพาะตำแหน่งใกล้เคียง โค้ชจะดูว่าค่าพลังของคุณเหมาะกับตำแหน่งใหม่ไหม';
+  { const st = styleOf(), se = P.season; if (st.head || st.long) info += `\n📈 สไตล์ทำประตู — ตลอดอาชีพ: โหม่ง ${st.head} · ยิงไกล ${st.long} (จาก ${st.g} ลูก) | ฤดูกาลนี้: โหม่ง ${se.head || 0} · ยิงไกล ${se.long || 0}`; }
+  if (P.adaptWeeks > 0) info += `\n🔄 กำลังปรับตัวกับตำแหน่งใหม่ (อีก ${P.adaptWeeks} สัปดาห์)`;
+  document.getElementById('posInfo').textContent = info;
+  document.getElementById('btnPos').disabled = !opts.length || !!cd;
+}
+function applyPosChange(to, byCoach) {
+  (P.posHistory = P.posHistory || []).push({ season: currentSeason, from: P.pos, to });
+  P.pos = to; P.posLast = currentSeason; P.adaptWeeks = 6;
+  if (!byCoach) P.coachTrust = Math.max(0, P.coachTrust - 3);
+  updateDashboardUI();
+}
+function requestPosChange() {
+  const to = document.getElementById('posSel').value;
+  if (!to || posCooldownMsg() || !(POS_ADJ[P.pos] || []).includes(to)) return;
+  P.posReq = currentSeason;
+  const cur = ovrOf(), nw = calcOvr(P.attrs, to), wide = ['LW', 'RW'].includes(P.pos), atk = ['ST', 'CAM'].includes(to), sb = styleBonus(to);
+  if (nw < cur - 6) { alert(`🗣️ โค้ชปฏิเสธ\nค่าพลังของคุณยังไม่เหมาะกับตำแหน่ง ${to} ${POS_TH[to]} (OVR ที่ตำแหน่งนั้น ${nw} ต่ำกว่าตำแหน่งปัจจุบัน ${cur} มาก)\n\nฝึกซ้อมค่าพลังที่ตำแหน่งนั้นต้องการก่อน แล้วค่อยมาขอใหม่ปีหน้า`); renderPosChange(); return; }
+  const chance = Math.max(0.05, Math.min(0.9, 0.35 + (nw - cur) * 0.04 + (P.age >= 29 ? 0.2 : 0) + (P.coachTrust >= 60 ? 0.1 : 0) + (wide && atk && P.season.goals >= 6 ? 0.15 : 0) + sb.b));
+  if (Math.random() < chance) {
+    alert(`✅ โค้ชอนุญาต!\nคุณจะย้ายไปเล่นตำแหน่ง ${to} ${POS_TH[to]}\nOVR ที่ตำแหน่งใหม่ ${nw} (เดิม ${cur})\n\n${sb.why ? '💬 โค้ช: ' + sb.why + '\n\n' : ''}ต้องใช้เวลาปรับตัวราว 6 สัปดาห์ ช่วงนี้จะเล่นไม่คล่องเท่าปกติ`);
+    applyPosChange(to, false);
+  } else { alert(`🗣️ โค้ชยังอยากให้คุณเล่น ${P.pos} ต่อไปก่อน\nทีมต้องการคุณตำแหน่งนี้ตอนนี้ ลองขอใหม่ปีหน้า หรือทำผลงานให้ชัดขึ้น`); renderPosChange(); }
+}
+function coachSuggestPos() {
+  const opts = POS_ADJ[P.pos] || [];
+  if (!opts.length || (P.posLast && currentSeason - P.posLast < 2)) return;
+  const cur = ovrOf(); let best = null, bo = 0, why = '', bb = 0;
+  if (P.age >= 22) opts.forEach(t => { const sb = styleBonus(t), o = calcOvr(P.attrs, t); if (sb.b > bb && o >= cur - 3) { bb = sb.b; best = t; bo = o; why = 'โค้ชสังเกตสไตล์การเล่นของคุณ: ' + sb.why; } });
+  if (!best && P.age >= 30) { bo = cur + 1; opts.forEach(t => { const o = calcOvr(P.attrs, t); if (o > bo) { bo = o; best = t; } }); if (best) why = `อายุ ${P.age} ปี สภาพร่างกายเปลี่ยนไป`; }
+  if (!best) return;
+  gameConfirm(`📋 โค้ชเรียกคุยหลังจบฤดูกาล\n${why}\nโค้ชเห็นว่าคุณเหมาะกับตำแหน่ง ${best} ${POS_TH[best]}\n(OVR ${cur} → ${bo})\n\nต้องการย้ายตำแหน่งไหม?`, '✅ ตกลง ย้ายตำแหน่ง', '❌ ขอเล่นที่เดิมต่อ', () => applyPosChange(best, true), () => { P.posLast = currentSeason - 1; });
 }
 function ovrOf(){ return calcOvr(P.attrs, P.pos); }
 function clubRating(){ if (natMatch) return 63; const t=leagueTeams.find(x=>x.name===P.club); return t?t.rating:65; }
@@ -886,6 +950,7 @@ function updateDashboardUI() {
   document.getElementById('stAssists').textContent = P.season.assists;
   renderCareerStats();
   renderTransferRequest();
+  renderPosChange();
   document.getElementById('coachTrustText').textContent = `${P.coachTrust} / 100`;
 
   document.getElementById('infoVal').textContent = `฿${P.marketValue.toLocaleString()}`;
@@ -1317,7 +1382,7 @@ function penaltyShot(c) {
   matchTimer = setInterval(runMatchLoop, 500);
 }
 function simulateMinuteEvent(min) {
-  if (!natMatch && !matchRed && min >= 3 && min <= 88 && Math.random() < 0.0005) { triggerPenalty(min); return; }
+  if (!natMatch && !matchRed && min >= 3 && min <= 88 && Math.random() < 0.0004) { triggerPenalty(min); return; }
   if (isPlayerOnField && !matchRed) {
     const dm = ['CB','CDM','LB','RB','CM'].includes(P.pos) ? 1.8 : 1;
     if (Math.random() < 0.0009 * dm) {
@@ -1462,6 +1527,7 @@ function makeChoice(i) {
   let opp = currentOpponent ? currentOpponent.rating : 70;
   let p = 0.34 + (P.attrs[STAT[c.st]] - opp) * 0.01 + (c.r === 'E' ? 0.4 : c.r === 'S' ? 0.25 : c.r === 'R' ? -0.15 : 0);
   if (P.fitness < 30) p -= 0.15;
+  if (P.adaptWeeks > 0) p -= 0.05;
   if (currentMinute >= 70) { if (homeScore < awayScore && c.r === 'R') p += 0.08; else if (homeScore > awayScore && c.r === 'S') p += 0.08; }
   p = Math.max(0.08, Math.min(0.92, p));
   const t = `${currentMinute}'`;
@@ -1470,7 +1536,8 @@ function makeChoice(i) {
     card.classList.add('flash-gold'); setTimeout(() => card.classList.remove('flash-gold'), 800);
     if (c.ok === 'GOAL') {
       homeScore++; matchGoals++; matchRating = Math.min(10, matchRating + 1.2); P.coachTrust = Math.min(100, P.coachTrust + 3); score();
-      addMatchLog(t, `⚽ GOAL! ${meLabel()} (${myName()}) ยิงประตู!${Math.random() < 0.5 ? ' แอสซิสต์: ' + pickScorer(myTeam(), 'a') : ''}`, 'highlight');
+      const gk = goalKind(c.t), gs = styleOf(); gs.g++; if (gk) { gs[gk]++; P.season[gk] = (P.season[gk] || 0) + 1; }
+      addMatchLog(t, `⚽ GOAL! ${meLabel()} (${myName()}) ยิงประตู${gk === 'head' ? ' ด้วยการโหม่ง' : gk === 'long' ? ' จากระยะไกล' : ''}!${Math.random() < 0.5 ? ' แอสซิสต์: ' + pickScorer(myTeam(), 'a') : ''}`, 'highlight');
     } else if (c.ok === 'ASSIST') {
       homeScore++; matchAssists++; matchRating = Math.min(10, matchRating + 1.0); P.coachTrust = Math.min(100, P.coachTrust + 2); score();
       addMatchLog(t, `⚽ GOAL! ${pickScorer(myTeam(), 'g')} (${myName()}) ยิงประตู! แอสซิสต์: ${meLabel()}`, 'highlight');
@@ -1562,6 +1629,7 @@ function finishMatchDay() {
   afterWeek();
 }
 function afterWeek() {
+  if (P.adaptWeeks > 0) P.adaptWeeks--;
   if (agentOfferPending && !isTransferWindowOpen()) { agentOfferPending = null; document.getElementById('transferOfferBox').classList.add('hidden'); addAgentMessage('⌛ ตลาดปิดแล้ว ข้อเสนอที่ค้างอยู่หมดอายุ'); }
   hasTrainedThisWeek = false; hasRestedThisWeek = false;
   document.getElementById('liveStreamArea').classList.add('hidden');
@@ -1668,6 +1736,7 @@ function advanceSeason() {
     alert('⚠️ สภาพร่างกายโรยราตามอายุ ค่าพลังลดลง');
   }
   if (isFirstTeam() && P.contractEnd < currentSeason) handleContractExpiry();
+  coachSuggestPos();
   if (!isFirstTeam() && P.age >= 19) {
     const weak = [...leagueTeams].sort((a, b) => a.rating - b.rating).slice(0, 6);
     P.club = weak[Math.floor(Math.random() * weak.length)].name;
