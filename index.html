@@ -239,6 +239,36 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
 .dd-item{padding:12px 14px;color:#14306b;font-family:var(--font-title);font-size:15px;font-weight:600;cursor:pointer;border-bottom:1px solid #e3eafc}
 .dd-item:last-child{border-bottom:0}
 .dd-item.sel{background:#e8efff;font-weight:700}
+
+.dd-sel{flex:none;width:100%}
+.dd-sel .dd-label{white-space:normal;line-height:1.3}
+.dd-sel .dd-menu{max-height:min(55vh,320px);overflow-y:auto}
+.dd-sel .dd-btn:disabled{opacity:.55}
+.dd-row .dd-btn{font-size:14px;padding:9px 8px;border-width:4px}
+.dd.dd-view{flex:1.5 1 0}
+
+/* ===== พิธีมอบรางวัล ===== */
+.ac-overlay{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:18px;background:radial-gradient(circle at 50% 30%,#4a3608 0%,#1a1204 55%,#000 100%);animation:acfade .5s ease}
+.ac-card{position:relative;overflow:hidden;width:100%;max-width:420px;max-height:92vh;overflow-y:auto;text-align:center;padding:26px 20px;border-radius:22px;background:linear-gradient(160deg,#2a1d05,#0e0a02);border:3px solid #e8c25a;box-shadow:0 0 40px rgba(232,194,90,.45),inset 0 0 30px rgba(232,194,90,.12);color:#f7e3a1;font-family:var(--font-title)}
+.ac-card.win-me{animation:acglow 1s ease-in-out infinite alternate}
+.ac-crown{font-size:54px;line-height:1.1;margin-bottom:6px;filter:drop-shadow(0 0 12px rgba(255,214,102,.8))}
+.ac-title{font-size:22px;font-weight:800;color:#ffd666;letter-spacing:.5px}
+.ac-sub{font-size:14px;color:#c9a85a;margin:4px 0 12px}
+.ac-award{font-size:19px;font-weight:800;color:#ffd666;margin-bottom:10px}
+.ac-text{font-size:15px;line-height:1.55;white-space:pre-line;margin:10px 0 16px;color:#f2deaa}
+.ac-text.ac-left{text-align:left;font-size:14px}
+.ac-nom{font-size:12px;color:#b8975a;margin-bottom:12px}
+.ac-spin{font-size:26px;font-weight:800;min-height:78px;display:flex;align-items:center;justify-content:center;margin:6px 0 16px;padding:10px;border-radius:14px;border:2px solid #8a6a1e;background:#120c02;color:#fff1c0;transition:transform .3s,color .3s}
+.ac-spin.done{color:#ffd666;border-color:#ffd666;transform:scale(1.06);text-shadow:0 0 16px rgba(255,214,102,.9)}
+.ac-club{font-size:14px;color:#c9a85a;margin-bottom:10px}
+.ac-win{font-size:17px;font-weight:800;color:#fff3c4;margin:6px 0 14px;text-shadow:0 0 14px rgba(255,214,102,.9)}
+.ac-btn{display:block;width:100%;margin-top:10px;padding:13px;border:0;border-radius:14px;font-family:var(--font-title);font-size:16px;font-weight:800;color:#2a1d05;background:linear-gradient(180deg,#ffe28a,#e0a82e);box-shadow:0 4px 0 #8a6414;cursor:pointer}
+.ac-btn.ac-ghost{background:transparent;color:#d9bb6a;border:2px solid #8a6a1e;box-shadow:none}
+.ac-conf{position:absolute;top:-12px;width:8px;height:14px;background:#ffd666;opacity:.9;border-radius:2px;animation:acfall 3s linear infinite}
+.ac-conf:nth-child(3n){background:#fff3c4}.ac-conf:nth-child(3n+1){background:#e0a82e}
+@keyframes acfall{to{transform:translateY(520px) rotate(540deg);opacity:0}}
+@keyframes acfade{from{opacity:0}to{opacity:1}}
+@keyframes acglow{from{box-shadow:0 0 30px rgba(232,194,90,.4)}to{box-shadow:0 0 60px rgba(255,214,102,.9)}}
 </style>
 </head>
 <body>
@@ -1488,18 +1518,82 @@ SCEN.def.push(SC('d6','กองหน้าคู่แข่งรอรับ
 SCEN.gk.push(SC('g6','เตะลูกโด่งจากประตู','ทีมกำลังรอให้คุณเริ่มเกมต่อ',[C('เตะยาวไปหากองหน้า','N','pa','PLAY'),C('เตะสั้นให้กองหลัง','S','pa','PLAY'),C('ขว้างบอลให้ปีกที่วิ่งเร็ว','N','pa','PLAY'),C('เตะวอลเลย์ไกลสุด','R','pa','PLAY','CONCEDE'),C('ถือบอลไว้ก่อนแล้วจัดทีม','S','df','PLAY')]));
 const DESC = {"a1": "คุณเลี้ยงบอลเข้าเขตโทษทางด้านขวา ผู้รักษาประตูออกมาปิดมุมเสาใกล้ เพื่อนตามมาข้างหลังแต่ยังอยู่ไกล", "a2": "บอลโด่งจากริมเส้นลอยมาตรงหน้าคุณ กองหลังยืนอยู่ข้างหลัง ผู้รักษาประตูอยู่กลางประตู", "a3": "ทีมตีเกมสวนกลับ เหลือกองหลังคู่แข่งคนเดียว เพื่อนวิ่งขนานมาทางซ้ายของคุณ", "a4": "ทีมได้ฟรีคิกหน้ากรอบเขตโทษ กำแพงยืนเรียงหน้าบอล เพื่อนสองคนรอวิ่งเข้าเสาไกล", "a5": "คุณรับบอลหน้ากรอบเขตโทษ แนวรับคู่แข่งยังวิ่งกลับมาไม่ทัน ผู้รักษาประตูยืนอยู่กลางประตู", "a6": "คุณเลี้ยงบอลริมเส้นแล้วโดนกองหลังสองคนล้อม ไม่มีทางไปต่อทางตรง", "a7": "เพื่อนเปิดบอลมาหน้าประตูพอดี ผู้รักษาประตูออกไปไกลแล้ว ประตูว่างอยู่ตรงหน้า มีแค่คุณกับบอล", "a8": "คุณหลุดเดี่ยวหน้าประตู ผู้รักษาประตูกำลังวิ่งออกมา เพื่อนวิ่งตามมาทางซ้าย", "a9": "คุณได้บอลหน้ากรอบเขตโทษ ไม่มีใครเข้ามาประกบ ผู้รักษาประตูยืนค่อนไปทางเสาใกล้", "m1": "คุณได้บอลกลางสนาม คู่แข่งสามคนวิ่งเข้ามากดดันพร้อมกัน ตัวรับของทีมอยู่ข้างหลังคุณ", "m2": "บอลเด้งมาที่เท้าคุณตรงขอบเขตโทษ กองหลังยังไม่เข้าประกบ ผู้รักษาประตูอยู่กลางประตู", "m3": "คู่แข่งรับบอลกลางสนามและกำลังจะเปิดเกมสวนกลับ คุณอยู่ใกล้ที่สุด", "m4": "ทีมได้เตะมุม เพื่อนยืนเต็มกรอบเขตโทษ ผู้รักษาประตูคู่แข่งยืนอยู่กลางประตู", "m5": "เกมชะลอลง ไม่มีใครกดดันคุณ แนวรับคู่แข่งถอยลงมาตั้งรับลึก", "m6": "คุณคุมจังหวะกลางสนาม แนวรับคู่แข่งถอยลึกหน้ากรอบเขตโทษ เพื่อนปีกวิ่งขึ้นริมเส้นทั้งสองฝั่ง", "d1": "กองหน้าคู่แข่งหลุดเดี่ยวเข้ามา เหลือแค่คุณคนเดียวขวางอยู่ ข้างหลังคุณคือผู้รักษาประตู", "d2": "คู่แข่งเปิดครอสเข้ากรอบเขตโทษเรา บอลลอยมาตรงหน้าคุณ กองหน้าคู่แข่งอยู่ข้างหลังคุณ", "d3": "บอลเด้งออกมาหน้าแนวรับเรา คู่แข่งวิ่งเข้ามาประชิดคุณทันที", "d4": "ทีมได้เตะมุม คุณยืนอยู่หลังแนว มองเห็นกองหน้าคู่แข่งรออยู่ครึ่งสนามเรา", "d5": "คู่แข่งสวนกลับมาสามคน ทีมเรากลับตัวทันแค่สองคน คุณอยู่ตรงกลาง", "d6": "บอลลอยมาจากฝั่งคู่แข่ง กองหน้าเขายืนอยู่ข้างหลังคุณรอรับบอล ผู้รักษาประตูเราอยู่ไกลออกไป", "g1": "คู่แข่งยิงสุดแรงจากนอกเขตโทษ บอลพุ่งมาทางมุมประตูของคุณ", "g2": "กองหน้าคู่แข่งหลุดเดี่ยวเข้ามา กองหลังเราตามไม่ทัน เหลือแค่คุณกับเขา", "g3": "คู่แข่งเปิดครอสโด่งเข้ากรอบ กองหน้าเขากระโดดขึ้นมาแย่งบอลตรงหน้าคุณ", "g4": "คู่แข่งได้จุดโทษ ผู้ยิงวางบอลแล้วเดินถอยหลัง สนามเงียบลง", "g5": "เพื่อนทดบอลย้อนกลับมาให้คุณ กองหน้าคู่แข่งวิ่งเข้ามากดดันทันที", "g6": "บอลออกหลังประตู คุณต้องเริ่มเกมใหม่ ทีมกำลังรอบอล กองหน้าเราอยู่ไกลขึ้นไป", "f1": "คุณได้บอลริมเส้น พื้นที่ฝั่งคุณว่างโล่ง กองหน้าเราอยู่กลางกรอบเขตโทษ", "f2": "ปีกคู่แข่งลากบอลเข้ามาริมเส้น กำลังจะเปิดเข้ากรอบเขตโทษ คุณอยู่ตรงหน้าเขา", "f3": "บอลยาวข้ามฝั่งลอยมาหาคุณริมเส้น แนวรับคู่แข่งขยับไปฝั่งตรงข้ามแล้ว", "f4": "คู่แข่งได้ลูกตั้งเตะ ผู้เล่นเขายืนเต็มกรอบเขตโทษเรา คุณยืนอยู่ปลายแนวรับ"};
 [...SCEN.atk, ...SCEN.mid, ...SCEN.def, ...SCEN.gk, ...SCEN.fb].forEach(x => { if (DESC[x.id]) x.desc = DESC[x.id]; });
+/* ===== เหตุการณ์เฉพาะตำแหน่ง ===== */
+SCEN.st = [
+  SC('st1','หันหลังรับบอลหน้ากรอบเขตโทษ!','กองหลังเกาะหลังแน่น เพื่อนกำลังวิ่งขึ้นมาสนับสนุน',[C('ทดให้เพื่อนที่วิ่งขึ้นมา','S','pa','PLAY'),C('หมุนตัวหลบแล้วยิง','N','sh','GOAL'),C('คุมบอลแล้วทดสั้นให้เพื่อนยิง','N','pa','ASSIST'),C('ใช้ตัวกันแล้วหมุนยิงทันที','R','sh','GOAL')]),
+  SC('st2','ลูกทะลุช่อง! เส้นล้ำหน้าเฉียดมาก','คุณวิ่งขนานแนวรับคู่แข่งอยู่พอดี',[C('รอจังหวะให้ชัวร์ก่อนค่อยวิ่ง','S','pc','PLAY'),C('วิ่งสวนเต็มสปีดแล้วยิงต่อตัวกับผู้รักษาประตู','N','pc','GOAL'),C('ชิปข้ามผู้รักษาประตู','R','sh','GOAL'),C('ทดข้างให้เพื่อนที่ตามมาแตะเข้า','N','pa','ASSIST')]),
+  SC('st3','ลูกครอสโด่งเข้ากลางกรอบ!','กองหลังสองคนประกบคุณอยู่',[C('โหม่งเข้ามุมไกล','N','sh','GOAL'),C('โหม่งทดให้เพื่อนที่ว่าง','S','pa','ASSIST'),C('กระโดดโหม่งแย่งกับกองหลังสองคน','R','sh','GOAL'),C('ปล่อยให้เพื่อนที่อยู่ไกลกว่าเข้าโหม่ง','S','pa','PLAY')]),
+  SC('st4','ผู้รักษาประตูปัดบอลเด้งกลับ!','บอลเด้งมาตรงหน้า ผู้รักษาประตูล้มอยู่กับพื้น',[C('ซ้ำเข้าประตูว่าง ๆ','E','sh','GOAL'),C('ซ้ำสุดแรงทันที','N','sh','GOAL'),C('เปิดให้เพื่อนที่เสาสองซ้ำ','S','pa','ASSIST')]),
+  SC('st5','กองหลังคู่แข่งทดบอลกลับช้า!','ผู้รักษาประตูกำลังจะรับบอลมาเล่นต่อ',[C('วิ่งเข้ากดดันเต็มที่','N','pc','PLAY'),C('ตัดบอลก่อนผู้รักษาประตูแล้วยิง','R','pc','GOAL'),C('กดดันแบบเบา ๆ ไม่ให้เสียแรง','S','df','PLAY')]),
+  SC('st6','เจอผู้รักษาประตูตัวต่อตัว!','มีแค่คุณกับผู้รักษาประตูที่ออกมาปิด',[C('ยิงแรงเข้ามุมล่าง','N','sh','GOAL'),C('เลี้ยงหลบแล้วยิงเข้าประตูว่าง','N','pc','GOAL'),C('ชิปข้ามหัว','R','sh','GOAL'),C('ทดให้เพื่อนที่ตามมายิง','S','pa','ASSIST')]),
+  SC('st7','ลูกเตะมุมของทีมเรา!','คุณยืนอยู่ในกรอบเขตโทษกับกองหลังที่ประกบ',[C('ขึ้นโหม่งเสาใกล้','N','sh','GOAL'),C('ซ้อนหลังกองหลังไปโหม่งเสาไกล','R','sh','GOAL'),C('ยืนบล็อกผู้รักษาประตูให้เพื่อน','S','df','PLAY'),C('ตัดหลังแล้วทดให้เพื่อนเข้ายิง','N','pa','ASSIST')]),
+  SC('st8','เพื่อนเปิดจากริมเส้นมาเสาไกล!','บอลลอยมาต่ำ ๆ คุณเข้าจังหวะพอดี',[C('เข้าดักวอลเลย์ทันที','R','sh','GOAL'),C('แตะเข้าด้วยข้างเท้า','N','sh','GOAL'),C('ชะลอรอเพื่อนขึ้นมา','S','pa','PLAY')]),
+  SC('st9','ถูกกองหลังประกบแน่นตลอดเกม','เล่นในกรอบไม่ได้เลย ต้องหาทางใหม่',[C('ลงมารับบอลต่ำแล้วทดกลับ','S','pa','PLAY'),C('ลงต่ำแล้วเปิดทะลุให้ปีก','N','pa','ASSIST'),C('ลากบอลหันหน้าเข้าหาประตูแล้วยิงจากนอกเขตโทษ','R','sh','GOAL')]),
+  SC('st10','ลูกยาวส่งตรงหาคุณ!','กองหลังคู่แข่งยืนอยู่ข้างหลังคุณ',[C('เด้งบอลด้วยอกแล้วทดให้เพื่อน','S','pa','PLAY'),C('ชิงบอลแล้วลากเข้าเขตโทษ','N','pc','PLAY'),C('ยิงวอลเลย์ทันที','R','sh','GOAL')])
+];
+SCEN.wg = [
+  SC('wg1','ลากเลี้ยงกับแบ็กริมเส้น!','เหลือแค่คุณกับแบ็กคู่แข่งหนึ่งต่อหนึ่ง',[C('ถอยกลับให้เพื่อนเล่นต่อ','S','pa','PLAY'),C('ตัดเข้าในแล้วยิงเสาสอง','N','sh','GOAL'),C('ลากผ่านแบ็กด้วยความเร็วแล้วครอสเข้ากลาง','N','pc','ASSIST'),C('ลากผ่านสองคนแล้วยิงมุมแคบ','R','pc','GOAL')]),
+  SC('wg2','ตัดเข้าในจากริมเส้น!','ช่องว่างเปิดให้คุณใช้เท้าถนัด',[C('ยิงเสียบมุมไกล','N','sh','GOAL'),C('ยิงไกลจากนอกเขตโทษ','R','sh','GOAL'),C('แตะให้เพื่อนที่ตามมาทางริมเส้น','S','pa','PLAY')]),
+  SC('wg3','สวนกลับ คุณวิ่งริมเส้นเต็มสปีด!','ทีมกำลังนำบอลขึ้นมาเร็วมาก',[C('ครอสต่ำเข้ากลางให้เพื่อนซ้ำ','N','pa','ASSIST'),C('ตัดเข้ากรอบแล้วยิง','R','sh','GOAL'),C('ชะลอรอเพื่อนขึ้นมา','S','pa','PLAY'),C('จ่ายถอยหลังให้กองกลางเข้ายิง','N','pa','ASSIST')]),
+  SC('wg4','ซ้อนขึ้นกับแบ็กทีมเรา!','แบ็กวิ่งซ้อนมาข้างนอกคุณ',[C('แลกบอลสองต่อหนึ่งแล้วเข้ากรอบ','N','pa','ASSIST'),C('ปล่อยบอลให้แบ็กขึ้นไปเปิด','S','pa','PLAY'),C('เบี่ยงตัวแล้วยิงทันที','R','sh','GOAL')]),
+  SC('wg5','ครอสจากอีกฝั่งมาเสาไกล!','คุณวิ่งเข้าไปรออยู่หลังกองหลัง',[C('โหม่งทิ้งให้เพื่อนที่ว่าง','S','pa','ASSIST'),C('โหม่งเข้ามุมล่าง','N','sh','GOAL'),C('วอลเลย์ทันที','R','sh','GOAL')]),
+  SC('wg6','ได้เตะลูกเตะมุม!','เพื่อนยืนรอในกรอบเต็มไปหมด',[C('เปิดโค้งเข้าหน้าประตู','N','pa','ASSIST'),C('เปิดสั้นให้เพื่อนเล่นต่อ','S','pa','PLAY'),C('เตะตรงเข้าประตูเลย','R','sh','GOAL')]),
+  SC('wg7','บอลหลุดหลังแบ็กคู่แข่ง!','ต้องแข่งวิ่งกับแบ็กไปเก็บบอล',[C('เร่งแล้วเปิดครอสทันที','N','pc','ASSIST'),C('คุมบอลเข้าพื้นที่แล้วยิง','R','pc','GOAL'),C('เก็บบอลชะลอเกม','S','pa','PLAY')]),
+  SC('wg8','ถูกประกบสองคนริมเส้น','แบ็กกับกองกลางบีบเข้ามาพร้อมกัน',[C('ถอยหลังจ่ายกลับ','S','pa','PLAY'),C('ลากหลบแล้วแทงทะลุให้เพื่อน','N','pa','ASSIST'),C('ลากผ่านสองคนแล้วยิง','R','pc','GOAL')])
+];
+SCEN.cam = [
+  SC('cam1','ได้บอลระหว่างแนวรับกับกองกลางคู่แข่ง!','มีช่องให้หันหน้าเข้าประตู',[C('หันตัวแล้วแทงทะลุให้กองหน้า','N','pa','ASSIST'),C('เล่นสั้นให้เพื่อนเล่นต่อ','S','pa','PLAY'),C('เลี้ยงเข้าช่องแล้วยิง','R','sh','GOAL'),C('ยิงไกลจากขอบเขตโทษ','R','sh','GOAL')]),
+  SC('cam2','เกมจังหวะช้า คู่แข่งตั้งรับลึก','เปิดบอลได้หลายแบบ เลือกจังหวะ!',[C('เปลี่ยนเกมไปอีกฝั่งหาปีก','N','pa','ASSIST'),C('ส่งสั้นหมุนเกมต่อ','S','pa','PLAY'),C('ลากผ่านกองกลางแล้วยิงไกล','R','pc','GOAL')]),
+  SC('cam3','บอลเด้งหลุดที่ขอบเขตโทษ!','บอลมาถึงเท้าคุณพอดี',[C('ยิงวอลเลย์ทันที','R','sh','GOAL'),C('แตะให้เพื่อนที่ว่างกว่า','S','pa','PLAY'),C('ยิงไกลจากขอบเขตโทษ','N','sh','GOAL')]),
+  SC('cam4','ฟรีคิกหน้ากรอบ ทีมให้คุณเตะ!','กำแพงคู่แข่งยืนเรียงเต็ม',[C('เปิดโค้งให้เพื่อนโหม่ง','N','pa','ASSIST'),C('ยิงข้ามกำแพง','R','sh','GOAL'),C('เล่นสั้นให้เพื่อน','S','pa','PLAY'),C('เสียบมุมไกลหลังกำแพง','N','sh','GOAL')]),
+  SC('cam5','คู่แข่งกดดันสูง เกือบเสียบอล!','กองกลางคู่แข่งสองคนบีบเข้ามา',[C('เปลี่ยนทิศหลบแล้วจ่ายกลับ','S','pa','PLAY'),C('เลี้ยงหลบแล้วสอดทะลุ','R','pc','ASSIST'),C('ส่งยาวข้ามแนวไปหาปีก','N','pa','PLAY')]),
+  SC('cam6','ปีกเปิดบอลต่ำมาถึงหน้ากรอบ!','บอลวิ่งผ่านกองหลังมาหาคุณ',[C('ยิงทันทีจากขอบเขตโทษ','N','sh','GOAL'),C('ทดให้กองหน้าที่เข้าเสาใกล้','N','pa','ASSIST'),C('ปล่อยบอลผ่านตัวให้เพื่อน','S','pa','PLAY')]),
+  SC('cam7','ทีมกำลังเป็นรอง ต้องหาจังหวะ','เวลาเริ่มบีบ ต้องฉีกแนวให้ได้',[C('ถอยลงรับบอลต่ำ','S','pa','PLAY'),C('ฉีกแนวด้วยบอลทะลุ','R','pa','ASSIST'),C('ยิงไกลสู้','R','sh','GOAL')])
+];
+SCEN.cm = [
+  SC('cm1','คุมจังหวะกลางสนาม คู่แข่งบีบเข้ามา!','มีสามคนล้อมคุณอยู่',[C('เล่นสั้นเอาชัวร์','S','pa','PLAY'),C('เปลี่ยนเกมไปอีกฝั่ง','N','pa','PLAY'),C('สอดทะลุให้กองหน้า','R','pa','ASSIST')]),
+  SC('cm2','ได้บอลซ้ำจากการแย่งกลางสนาม!','คู่แข่งยังตั้งรับไม่ทัน',[C('ส่งให้ตัวรุกสวนกลับ','N','pa','ASSIST'),C('ถือบอลรอเพื่อนขึ้นมา','S','pa','PLAY'),C('เร่งเต็มสปีดแล้วยิงไกล','R','pc','GOAL')]),
+  SC('cm3','คู่แข่งสวนกลับ คุณเป็นด่านแรก!','ต้องหยุดเกมก่อนถึงแนวรับ',[C('ยืนบล็อกช่องส่ง','S','df','PLAY'),C('เข้าแย่งบอลตรง ๆ','N','df','PLAY','CONCEDE'),C('ฟาวล์หยุดเกมไว้','S','df','PLAY')]),
+  SC('cm4','บอลหลุดมาที่ขอบเขตโทษ!','มีช่องให้ยิงแต่ไกลหน่อย',[C('ยิงไกลทันที','R','sh','GOAL'),C('แตะให้เพื่อนที่ว่าง','S','pa','PLAY'),C('เปิดทะลุให้กองหน้า','N','pa','ASSIST')]),
+  SC('cm5','ทีมต้องการเกมสร้างจากหลัง','คู่แข่งยืนรอบีบอยู่แดนกลาง',[C('จ่ายสั้นต่อเนื่อง','S','pa','PLAY'),C('ส่งยาวทะลุแนว','N','pa','ASSIST'),C('ลากบอลขึ้นหน้าเอง','R','pc','PLAY','CONCEDE')]),
+  SC('cm6','วิ่งขึ้นไปซ้อนในกรอบ!','เพื่อนกำลังเปิดครอสเข้ากลาง',[C('วิ่งสวนเข้ากรอบแล้วยิง','N','sh','GOAL'),C('ทดให้เพื่อนที่ว่างกว่า','S','pa','PLAY'),C('โหม่งลูกครอส','R','sh','GOAL')])
+];
+SCEN.cdm = [
+  SC('cdm1','คู่แข่งกำลังจะสอดทะลุกลาง!','กองหน้าเขาวิ่งรอรับบอลอยู่',[C('ตัดช่องส่งไว้ล่วงหน้า','N','df','PLAY'),C('ยืนคุมพื้นที่หน้าแนวรับ','S','df','PLAY'),C('เข้าสกัดบอลตรง ๆ','R','df','PLAY','CONCEDE')]),
+  SC('cdm2','ตัดบอลได้กลางสนาม!','คู่แข่งเปิดเกมสูงเลยเสียจังหวะ',[C('ส่งสั้นให้กองกลางทันที','S','pa','PLAY'),C('สอดทะลุเปลี่ยนเป็นสวนกลับ','N','pa','ASSIST'),C('ลากเลี้ยงขึ้นเองแล้วยิงไกล','R','pc','GOAL','CONCEDE')]),
+  SC('cdm3','กองหน้าคู่แข่งหันหลังรับบอล','ต้องกันไม่ให้หมุนตัวได้',[C('เกาะตัวไม่ให้หมุน','N','df','PLAY'),C('ฟาวล์หยุดเกม','S','df','PLAY'),C('เข้าแย่งจากด้านหลัง','R','df','PLAY','CONCEDE')]),
+  SC('cdm4','ลูกเตะมุมของคู่แข่ง!','คุณต้องประกบคนที่ขึ้นโหม่งหลัก',[C('ประกบแน่นตลอด','S','df','PLAY'),C('โหม่งตัดบอลออก','N','df','PLAY'),C('ขึ้นสวนกลับตอนบอลหลุด','R','pc','PLAY','CONCEDE')]),
+  SC('cdm5','เกมเสมอ ทีมต้องการเกมบอลยาว','คุณคุมบอลอยู่หน้าแนวรับ',[C('ส่งยาวข้ามแนวหาปีก','N','pa','ASSIST'),C('คุมจังหวะเล่นสั้น','S','pa','PLAY'),C('ยิงไกลจากกลางสนาม','R','sh','GOAL')]),
+  SC('cdm6','เพื่อนกองหลังเสียบอลหน้าเขตโทษ!','คู่แข่งหันหน้าเข้าหาประตูเรา',[C('เข้าปิดมุมยิง','N','df','PLAY','CONCEDE'),C('ถอยตั้งหลักให้เพื่อนกลับมา','S','df','PLAY'),C('ฟาวล์ให้หยุดเกม','S','df','PLAY')])
+];
+SCEN.cb = [
+  SC('cb1','ลูกครอสโด่งเข้ากรอบเรา!','กองหน้าคู่แข่งกระโดดขึ้นมาแย่งกับคุณ',[C('โหม่งเคลียร์ออกข้าง','S','df','PLAY'),C('โหม่งตัดบอลแล้วสวนกลับให้เพื่อน','N','pa','ASSIST','CONCEDE'),C('แย่งกับกองหน้าสองคนแล้วโหม่งตัดบอล','R','df','PLAY','CONCEDE')]),
+  SC('cb2','กองหน้าหลุดเดี่ยวหลังแนวรับ!','เหลือแค่คุณกับกองหน้าเขา',[C('ถอยตั้งหลักถ่วงเวลา','S','df','PLAY'),C('วิ่งตามแล้วเบียดไหล่','N','df','PLAY','CONCEDE'),C('เสียบสกัดเต็มตัว','R','df','PLAY','CONCEDE')]),
+  SC('cb3','ได้บอลหน้าแนวรับ คู่แข่งกดดันสูง!','กองหน้าเขาวิ่งเข้ามาบีบ',[C('ซัดไกลออกจากอันตราย','S','df','PLAY'),C('ทดให้ผู้รักษาประตู','S','pa','PLAY'),C('จ่ายทะลุแนวกดดันให้กองกลาง','R','pa','PLAY','CONCEDE'),C('ลากขึ้นหน้าแล้วส่งยาวทะลุ','N','pa','ASSIST')]),
+  SC('cb4','ลูกเตะมุมของทีมเรา!','คุณมีสิทธิ์ขึ้นไปช่วยเพิ่มตัวโหม่ง',[C('ขึ้นไปโหม่งเต็มตัว','R','sh','GOAL','CONCEDE'),C('อยู่ตั้งหลัก กันสวนกลับ','S','df','PLAY'),C('ขึ้นไปป่วนผู้รักษาประตู','N','df','PLAY')]),
+  SC('cb5','กองหน้าตัวเป้าคู่แข่งหันหลังชน!','เขาใช้ตัวกันคุณไว้รอเพื่อนมา',[C('ยืนเกาะตัวไม่ให้หมุน','N','df','PLAY'),C('ตัดหน้าบอล','R','df','PLAY','CONCEDE'),C('เรียกเพื่อนมาช่วยบีบ','S','df','PLAY')]),
+  SC('cb6','ลูกตั้งเตะของคู่แข่งหน้าเขตโทษ!','ทุกคนยืนเต็มกรอบ',[C('จัดแนวล้ำหน้าพร้อมเพื่อน','N','df','PLAY','CONCEDE'),C('ประกบคนโหม่งตัวเป้า','S','df','PLAY'),C('ยืนรับบอลที่เสาไกล','S','df','PLAY')]),
+  SC('cb7','จังหวะเปิดเกมสร้างจากหลัง','คู่แข่งบีบสูงขึ้นมาเป็นระยะ',[C('ทดสั้นให้เพื่อนใกล้สุด','S','pa','PLAY'),C('ส่งยาวหาปีกที่ว่าง','N','pa','ASSIST'),C('ตัดเข้ากลางแล้วส่งทะลุ','R','pa','PLAY','CONCEDE')])
+];
+SCEN.fb.push(
+  SC('f5','ซ้อนขึ้นหลังปีกในแดนคู่แข่ง!','ปีกกำลังลากเลี้ยงอยู่ ช่องข้างนอกว่าง',[C('วิ่งซ้อนแล้วเปิดต่ำเข้ากลาง','N','pa','ASSIST'),C('ทดให้ปีกเล่นต่อ','S','pa','PLAY'),C('วิ่งซ้อนเข้าไปยิงเอง','R','sh','GOAL')]),
+  SC('f6','ปีกคู่แข่งเร็วมาก ลากเลี้ยงเข้าหาคุณ!','ต้องกันไม่ให้ผ่านไปได้',[C('ถอยตามแล้วขวางทาง','S','df','PLAY'),C('เบียดไหล่ให้ออกข้าง','N','df','PLAY','CONCEDE'),C('ตัดบอลจากด้านหลัง','R','pc','PLAY','CONCEDE')]),
+  SC('f7','ขึ้นสวนกลับริมเส้น!','ทีมเพิ่งแย่งบอลได้ คุณมีพื้นที่ข้างหน้า',[C('ครอสต่ำเข้ากลาง','N','pa','ASSIST'),C('ส่งกลับกลางสนาม','S','pa','PLAY'),C('ลากเข้ากรอบแล้วยิงไกล','R','sh','GOAL')]),
+  SC('f8','คู่แข่งครอสเข้ากรอบ คุณต้องปิดเสาไกล!','บอลลอยมาทางฝั่งคุณ',[C('โหม่งเคลียร์ออก','N','df','PLAY'),C('ยืนคุมระยะ','S','df','PLAY'),C('ตัดบอลแล้วสวนกลับทันที','R','pc','ASSIST','CONCEDE')])
+);
 let curChoices = [];
 const usedScen = [];
 const RISK_TAG = { S: '🛡️ เอาชัวร์', N: '⚖️ สมดุล', R: '🔥 เสี่ย' };
 function pickScenario() {
-  let pool; const r = Math.random() < 0.5;
-  if (['ST','LW','RW'].includes(P.pos)) pool = SCEN.atk;
-  else if (P.pos === 'CAM') pool = r ? SCEN.atk : SCEN.mid;
-  else if (P.pos === 'CM') pool = r ? SCEN.mid : SCEN.def;
-  else if (P.pos === 'CDM') pool = r ? SCEN.mid : SCEN.def;
+  let pool; const r = Math.random() < 0.7;
+  if (P.pos === 'ST') pool = SCEN.st;
+  else if (P.pos === 'LW' || P.pos === 'RW') pool = SCEN.wg;
+  else if (P.pos === 'CAM') pool = r ? SCEN.cam : SCEN.mid;
+  else if (P.pos === 'CM') pool = r ? SCEN.cm : SCEN.mid;
+  else if (P.pos === 'CDM') pool = r ? SCEN.cdm : SCEN.def;
   else if (P.pos === 'GK') pool = SCEN.gk;
   else if (P.pos === 'LB' || P.pos === 'RB') pool = r ? SCEN.fb : SCEN.def;
-  else pool = SCEN.def;
+  else pool = r ? SCEN.cb : SCEN.def;
   let fresh = pool.filter(x => !usedScen.includes(x.id));
   if (!fresh.length) { pool.forEach(x => { const i = usedScen.indexOf(x.id); if (i >= 0) usedScen.splice(i, 1); }); fresh = pool; }
   const sc = fresh[Math.floor(Math.random() * fresh.length)];
@@ -1695,8 +1789,83 @@ function finishNational() {
   if (Math.random() < 0.03) { P.injuredWeeks = 1 + Math.floor(Math.random() * 2); st.lines.push('🩹 คุณบาดเจ็บระหว่างเกมทีมชาติ'); }
   gameModal(`${st.champ ? '🏆 ไทยคว้าแชมป์' + cup.name + '!' : '📊 จบการแข่งขัน' + cup.name}\n\n${st.lines.join('\n')}\n\n🇹🇭 ผลงานของคุณรายการนี้: ลงเล่น ${st.caps} นัด ${st.g} ประตู ${st.a} แอสซิสต์`, [{ label: 'ตกลง', cb: () => { natState = null; st.done(); } }]);
 }
+/* ===== พิธีมอบรางวัลประจำปี (ไทยลีก 1) ===== */
+function ceremonyAwards() {
+  const lvl = 'ไทยลีก 1', yr = currentSeason, mg = P.season.goals, ma = P.season.assists;
+  const rows = []; leagueTeams.forEach(t => squadOf(t).forEach(pl => rows.push({ n: pl.n, club: t.name, g: pl.g || 0, a: pl.a || 0 })));
+  const all = rows.concat([{ n: P.name, club: P.club, g: mg, a: ma, me: true }]);
+  const rank = (arr, f) => arr.map(r => ({ ...r, v: f(r) })).sort((x, y) => y.v - x.v || (y.me ? 1 : 0) - (x.me ? 1 : 0));
+  const defs = [
+    { icon: '🛡️', title: `นักเตะยอดเยี่ยมของสโมสร ${P.club}`, awardName: `นักเตะยอดเยี่ยมของสโมสร ${P.club}`, unit: 'ประตู+แอสซิสต์', list: rank(all.filter(r => r.club === P.club), r => r.g + r.a), prize: 100000 },
+    { icon: '🅰️', title: `ยอดเพลย์เมคเกอร์${lvl}`, awardName: `ยอดเพลย์เมคเกอร์${lvl}`, unit: 'แอสซิสต์', list: rank(all, r => r.a), prize: 200000 },
+    { icon: '⚽', title: `ดาวซัลโว${lvl}`, awardName: `ดาวซัลโว${lvl}`, unit: 'ประตู', list: rank(all, r => r.g), prize: 300000 },
+    { icon: '🏆', title: `นักเตะยอดเยี่ยมแห่งปี ${lvl}`, awardName: `นักเตะยอดเยี่ยมแห่งปี ${lvl}`, unit: 'ประตู+แอสซิสต์', list: rank(all, r => r.g + r.a), prize: 500000 }
+  ];
+  let total = 0, won = 0;
+  defs.forEach(d => {
+    d.winner = d.list.find(r => !r.me || r.v > 0) || d.list[0];
+    d.cands = d.list.slice(0, 5); if (!d.cands.includes(d.winner)) d.cands.push(d.winner);
+    const me = d.list.find(r => r.me); d.myRank = d.list.indexOf(me); d.myV = me.v;
+    if (d.winner.me) { P.awards.push({ name: d.awardName, year: yr, detail: `${mg} ประตู ${ma} แอสซิสต์` }); P.bankBalance += d.prize; total += d.prize; won++; }
+  });
+  if (won) P.coachTrust = Math.min(100, P.coachTrust + 5 * won);
+  const contender = defs.some(d => d.myV > 0 && d.myRank < 3);
+  gmQueue.push({ custom: done => runCeremony(defs, { contender, won, total }, done) });
+  if (!gmActive) gmNext();
+}
+function runCeremony(defs, ctx, done) {
+  const ov = document.createElement('div'); ov.className = 'ac-overlay';
+  const card = document.createElement('div'); card.className = 'ac-card'; ov.appendChild(card); document.body.appendChild(ov);
+  let timer = null;
+  const el = (cls, txt) => { const d = document.createElement('div'); d.className = cls; if (txt != null) d.textContent = txt; return d; };
+  const btn = (label, fn, cls) => { const b = document.createElement('button'); b.className = cls || 'ac-btn'; b.textContent = label; b.onclick = fn; return b; };
+  const show = (...n) => card.replaceChildren(...n);
+  const close = () => { clearTimeout(timer); ov.remove(); done(); };
+  const summary = () => defs.map(d => `${d.icon} ${d.title}: ${d.winner.n}${d.winner.me ? ' 🎉 (คุณ)' : ' (' + d.winner.club + ')'} · ${d.winner.v} ${d.unit}`).join('\n') + (ctx.won ? `\n\n🎉 คุณได้รับ ${ctx.won} รางวัล เงินรางวัล ฿${ctx.total.toLocaleString()}` : '');
+  function intro() {
+    show(el('ac-crown', '🏆'), el('ac-title', 'พิธีมอบรางวัลประจำปี'), el('ac-sub', `ไทยลีก 1 · ปีที่ ${currentSeason}`), el('ac-text', 'ถึงเวลาประกาศสุดยอดนักเตะแห่งฤดูกาลแล้ว'),
+      btn('🥇 เข้าร่วมพิธี', agent), btn('⏭️ ข้ามพิธี', () => { alert('🏅 รางวัลประจำฤดูกาล\n\n' + summary()); close(); }, 'ac-btn ac-ghost'));
+  }
+  function agent() {
+    show(el('ac-crown', '💼'), el('ac-title', 'เอเย่นต์ของคุณ'),
+      el('ac-text', ctx.contender ? '"ปีนี้เรามาเพื่อลุ้นรางวัลครับ! ผลงานคุณมีลุ้น ไปดูกันว่าจะได้อะไรกลับบ้าน"' : '"ปีนี้เรามาร่วมยินดีกับเพื่อนร่วมวงการครับ ผลงานยังไม่ถึงโผรางวัล แต่ตั้งเป้าปีหน้ากัน"'),
+      btn('✨ เริ่มพิธี', () => award(0)));
+  }
+  function award(i) {
+    if (i >= defs.length) return finale();
+    const d = defs[i], names = d.cands.map(c => c.n), wi = d.cands.indexOf(d.winner), n = names.length;
+    const box = el('ac-spin', '...'); const nom = el('ac-nom', 'ผู้เข้าชิง: ' + names.join(' · '));
+    const skip = btn('⏩ ข้ามการลุ้น', () => reveal(), 'ac-btn ac-ghost');
+    show(el('ac-crown', d.icon), el('ac-award', d.title), nom, box, skip);
+    let total = 26 + Math.floor(Math.random() * 6), k = 0, idx = (((wi - total) % n) + n) % n;
+    function tick() {
+      idx = (idx + 1) % n; k++; box.textContent = names[idx];
+      if (k >= total) { timer = setTimeout(reveal, 500); return; }
+      timer = setTimeout(tick, 60 + Math.pow(k / total, 3) * 520);
+    }
+    timer = setTimeout(tick, 400);
+    function reveal() {
+      clearTimeout(timer);
+      const w = d.winner; box.textContent = w.n; box.classList.add('done');
+      const parts = [el('ac-crown', d.icon), el('ac-award', d.title), box, el('ac-club', `${w.me ? P.club : w.club} · ${w.v} ${d.unit}`)];
+      if (w.me) {
+        card.classList.add('win-me');
+        parts.push(el('ac-win', `🎉 คุณคือผู้ชนะ! รับเงินรางวัล ฿${d.prize.toLocaleString()}`));
+        for (let c = 0; c < 26; c++) { const s = document.createElement('span'); s.className = 'ac-conf'; s.style.left = Math.random() * 100 + '%'; s.style.animationDelay = Math.random() * 1.2 + 's'; s.style.animationDuration = 2 + Math.random() * 1.5 + 's'; card.appendChild(s); }
+      } else card.classList.remove('win-me');
+      parts.push(btn(i === defs.length - 1 ? '📜 ดูสรุป' : 'รางวัลถัดไป ▶', () => { card.classList.remove('win-me'); award(i + 1); }));
+      card.replaceChildren(...parts);
+      if (w.me) for (let c = 0; c < 26; c++) { const s = document.createElement('span'); s.className = 'ac-conf'; s.style.left = Math.random() * 100 + '%'; s.style.animationDelay = Math.random() * 1.2 + 's'; s.style.animationDuration = 2 + Math.random() * 1.5 + 's'; card.appendChild(s); }
+    }
+  }
+  function finale() {
+    show(el('ac-crown', '📜'), el('ac-title', 'สรุปผลรางวัล'), el('ac-text ac-left', summary()), btn('จบพิธี', close));
+  }
+  intro();
+}
 function computeAwards() {
   P.awards = P.awards || [];
+  if (isFirstTeam()) { ceremonyAwards(); return; }
   const table = tbl(), lvl = isFirstTeam() ? 'ไทยลีก 1' : 'Youth League U18', rows = [];
   table.forEach(t => squadOf(t).forEach(pl => rows.push({ n: pl.n, club: t.name, g: pl.g || 0, a: pl.a || 0 })));
   const topG = rows.reduce((m, r) => r.g > m.g ? r : m, { g: -1 }), topA = rows.reduce((m, r) => r.a > m.a ? r : m, { a: -1 });
@@ -1856,6 +2025,7 @@ function gmNext() {
   const it = gmQueue.shift();
   if (!it) { gmActive = false; return; }
   gmActive = true;
+  if (it.custom) { it.custom(() => gmNext()); return; }
   const ov = document.createElement('div'); ov.className = 'gm-overlay';
   const card = document.createElement('div'); card.className = 'gm-card';
   const tx = document.createElement('div'); tx.className = 'gm-text'; tx.textContent = it.text;
@@ -1929,6 +2099,39 @@ function deleteSave() {
   document.getElementById('continueInfo').style.whiteSpace = 'pre-line';
   document.getElementById('continueBox').classList.remove('hidden');
 })();
+
+/* ===== แปลง <select> ทุกตัวให้เป็นดรอปดาวน์สไตล์เดียวกัน ===== */
+function enhanceSelect(sel) {
+  if (sel.dataset.dd) return; sel.dataset.dd = '1';
+  const w = document.createElement('div'); w.className = 'dd dd-sel';
+  w.style.marginBottom = sel.style.marginBottom || ''; sel.style.marginBottom = '0'; sel.style.display = 'none';
+  sel.parentNode.insertBefore(w, sel); w.appendChild(sel);
+  w.insertAdjacentHTML('beforeend', `<button type="button" class="dd-btn"><span class="dd-label"></span>${CHEV}</button><div class="dd-menu"></div>`);
+  const btn = w.querySelector('.dd-btn'), lab = w.querySelector('.dd-label'), menu = w.querySelector('.dd-menu');
+  function sync() {
+    const o = sel.options[sel.selectedIndex]; lab.textContent = o ? o.text : '';
+    menu.textContent = '';
+    Array.from(sel.options).forEach((op, i) => {
+      const it = document.createElement('div'); it.className = 'dd-item' + (i === sel.selectedIndex ? ' sel' : '');
+      it.textContent = op.text; it.dataset.i = i; menu.appendChild(it);
+    });
+    btn.disabled = sel.disabled;
+  }
+  btn.addEventListener('click', e => { e.stopPropagation(); const was = w.classList.contains('open'); closeDD(); if (!was) { sync(); w.classList.add('open'); ddOpenKey = 'sel'; } });
+  menu.addEventListener('click', e => {
+    const it = e.target.closest('.dd-item'); if (!it) return;
+    sel.selectedIndex = +it.dataset.i; sync(); closeDD();
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  const dv = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value'), di = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'selectedIndex');
+  Object.defineProperty(sel, 'value', { get() { return dv.get.call(this); }, set(v) { dv.set.call(this, v); sync(); }, configurable: true });
+  Object.defineProperty(sel, 'selectedIndex', { get() { return di.get.call(this); }, set(v) { di.set.call(this, v); sync(); }, configurable: true });
+  new MutationObserver(sync).observe(sel, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled'] });
+  sync();
+}
+function enhanceAllSelects() { document.querySelectorAll('select.form-select').forEach(enhanceSelect); }
+document.addEventListener('click', e => { if (!e.target.closest('.dd')) closeDD(); });
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', enhanceAllSelects); else enhanceAllSelects();
 </script>
 </body>
 </html>
