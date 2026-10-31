@@ -1132,7 +1132,7 @@ function triggerAgentTransferOffer() {
 
 function moveToClub(team, wage, years, pro) {
   const wasFirst = isFirstTeam();
-  P.club = team.name; P.wage = wage;
+  P.prevClub = P.club; P.club = team.name; P.wage = wage;
   if (wasFirst) {
     P.contractEnd = currentSeason + years - 1;
     P.coachTrust = Math.min(P.coachTrust, 55);
@@ -2227,5 +2227,189 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
   ];
 })();
 </script>
+<style>
+.off-post{background:rgba(10,25,70,.7);border:2px solid #3466d6;border-radius:14px;padding:12px;text-align:left;margin-bottom:12px;color:#fff;white-space:pre-wrap;word-break:break-word;font-size:15px;line-height:1.5}
+.off-post .off-who{font-weight:700;color:var(--accent-gold);margin-bottom:4px;font-size:13px}
+.off-quote{background:rgba(255,255,255,.1);border-left:4px solid var(--accent-red);border-radius:10px;padding:10px 12px;text-align:left;margin-bottom:12px;color:#fff;font-size:14px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.off-head{font-size:13px;color:var(--accent-gold);font-weight:700;margin-bottom:8px}
+.off-ta{min-height:96px;resize:none;font-size:16px;margin-bottom:10px;user-select:text;-webkit-user-select:text}
+</style>
+<script>
+/* ===== ระบบเหตุการณ์นอกสนาม (นักวิจารณ์ / สัมภาษณ์) — ไม่มีบัฟ ไม่กระทบสถิติ ไม่เก็บประวัติ ===== */
+let offToday = null;
+const OFF_E = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+const OFF_B = (label, cls, fn) => { const b = OFF_E('button', cls || 'btn-gold', label); b.onclick = fn; return b; };
+const OFF_FILL = (s, v) => String(s).replace(/\{(\w+)\}/g, (_, k) => v[k] != null ? v[k] : '');
+const OFF_RND = n => Math.floor(Math.random() * n);
+
+function offDialog(build, after) {
+  const ov = OFF_E('div', 'gm-overlay'), card = OFF_E('div', 'gm-card');
+  ov.appendChild(card); document.body.appendChild(ov);
+  const set = (...nodes) => card.replaceChildren(...nodes);
+  const close = () => { ov.remove(); if (after) after(); };
+  build(set, close);
+}
+function offShow(build) {
+  gmQueue.push({ custom: done => offDialog(build, done) });
+  if (!gmActive) gmNext();
+}
+function offTyping(set, o) {
+  const ta = OFF_E('textarea', 'form-input off-ta'); ta.maxLength = 160; ta.placeholder = o.placeholder || 'พิมพ์ข้อความของคุณ...';
+  const send = OFF_B(o.submit, 'btn-gold', () => { const t = ta.value.trim(); if (t) o.onSubmit(t); });
+  send.disabled = true; ta.oninput = () => { send.disabled = !ta.value.trim(); };
+  const bx = OFF_E('div', 'gm-btns'); bx.append(send, OFF_B(o.back, 'btn-blue', o.onBack));
+  set(OFF_E('div', 'off-head', o.title), ta, bx);
+  setTimeout(() => ta.focus(), 50);
+}
+
+const OFF_CRITIC = {
+  dry: ['{name} ไม่มีส่วนร่วมกับประตูมา {n} นัดติดแล้ว ทำได้แค่รอยิง', '{n} นัดแล้วที่ {name} หายไปจากเกมรุก ค่าตัวนี้คุ้มหรือเปล่า', 'ไม่เห็นเงาของ {name} ในเกมรุกมา {n} นัดติด'],
+  bad: ['ฟอร์มของ {name} ตกต่อเนื่อง โค้ชควรกล้าเปลี่ยนตัวได้แล้ว', 'ความผิดพลาดซ้ำซากของ {name} กำลังทำร้ายทีม'],
+  big: ['{name} เก่งแต่กับทีมเล็ก พอเจอทีมใหญ่ก็หายตัว', 'นัดนี้จะรู้ว่า {name} ตัวจริงหรือแค่ไม้ประดับ']
+};
+const OFF_ATK = ['ST', 'LW', 'RW', 'CAM', 'CM'], OFF_DEF = ['GK', 'CB', 'LB', 'RB', 'CDM'];
+function offOppRank() { const i = tbl().indexOf(currentOpponent); return i < 0 ? 99 : i + 1; }
+function offPickCritic() {
+  if (!P || (P.offCd || 0) > 0) return null;
+  if (!['ตัวจริง', 'กัปตันทีม', 'ตัวจริงเยาวชน'].includes(P.role)) return null;
+  if (P.injuredWeeks > 0 || P.banWeeks > 0 || P.benchWeeks > 0) return null;
+  const c = [];
+  if (OFF_ATK.includes(P.pos) && (P.dry || 0) >= 3) c.push({ kind: 'dry', p: 0.75 });
+  if ((P.badRun || 0) >= 2) c.push({ kind: 'bad', p: 0.75 });
+  if (offOppRank() <= 3 && tbl().findIndex(t => t.name === P.club) + 1 > 3) c.push({ kind: 'big', p: 0.3 });
+  if (!c.length) return null;
+  const pick = c[OFF_RND(c.length)];
+  if (Math.random() >= pick.p) return null;
+  const pool = OFF_CRITIC[pick.kind];
+  return { kind: pick.kind, text: OFF_FILL(pool[OFF_RND(pool.length)], { name: P.name, n: P.dry || 0 }) };
+}
+function offProven(c) {
+  if (matchMinutesPlayed < 30) return false;
+  const ga = matchGoals + matchAssists;
+  if (c.kind === 'dry') return ga >= 1;
+  if (c.kind === 'bad') return matchRating >= 7.0;
+  return ga >= 1 || matchRating >= 7.5 || (OFF_DEF.includes(P.pos) && awayScore === 0 && matchRating >= 6.8);
+}
+function offInterviewKind() {
+  const played = matchMinutesPlayed >= 30, rk = offOppRank(), win = homeScore > awayScore;
+  if (P.prevClub && currentOpponent && currentOpponent.name === P.prevClub && played) return 'oldclub';
+  if (!played) return null;
+  if (matchGoals >= 3) return 'hat';
+  if (isCupMatch && /Final/.test(cupRoundText) && win) return 'cupwin';
+  if (matchGoals >= 2) return 'brace';
+  if (matchAssists >= 2) return 'creator';
+  if (win && rk <= 3 && matchRating >= 7) return 'topwin';
+  if (OFF_DEF.includes(P.pos) && awayScore === 0 && rk <= 3 && matchRating >= 7) return 'wall';
+  if (awayScore - homeScore >= 3) return 'bigloss';
+  return null;
+}
+const OFF_Q = {
+  hat: 'แฮตทริกในนัดเดียว! รู้สึกยังไงกับค่ำคืนนี้?',
+  brace: 'สองประตูในนัดนี้ ลูกที่สองมาจากการวางตำแหน่ง หรือแค่โชคดี?',
+  creator: 'ทำแอสซิสต์ถึง {a} ครั้ง คุณมองตัวเองเป็นคนสร้างเกมหรือคนจบสกอร์มากกว่า?',
+  cupwin: 'คว้าแชมป์ถ้วยแล้ว! ถ้วยนี้มีความหมายกับคุณแค่ไหน?',
+  topwin: 'ชนะ {opp} ทีมอันดับต้น ๆ ของลีกได้ อะไรคือกุญแจของเกมนี้?',
+  wall: 'ไม่เสียประตูให้ {opp} ทีมอันดับต้น ๆ คุณจัดการเกมนี้ยังไง?',
+  bigloss: 'ทีมแพ้ {score} ในนัดนี้ คุณมองว่าอะไรผิดพลาดที่สุด?',
+  oldclub: 'เจอ {opp} อดีตทีมเก่าของคุณ รู้สึกยังไงกับการกลับมาเจอพวกเขา?',
+  critic: 'มีนักวิจารณ์เขียนว่า “{c}” หลังจบเกมนี้ คุณมีอะไรจะตอบไหม?',
+  awards: 'ปีนี้คุณติดโผลุ้น {awards} รู้สึกยังไงกับการมางานนี้?'
+};
+const OFF_A = {
+  hat: ['ต้องขอบคุณเพื่อน ๆ ทุกคนครับ ผมแค่อยู่ถูกที่ถูกเวลา', 'ผมเตรียมตัวมาเพื่อวันแบบนี้ และมันยังไม่ใช่ที่สุดของผม', 'ขอลูกบอลกลับบ้านหน่อยครับ เดี๋ยวเอาไปอวดแม่'],
+  brace: ['ผมว่ามีทั้งสองอย่างครับ แต่เพื่อนเปิดมาดีมาก', 'การวางตำแหน่งล้วน ๆ ครับ ผมอ่านจังหวะนั้นออกก่อนใคร', 'ขอเก็บเป็นความลับครับ ถ้าบอกไปคู่แข่งจะเอาไปใช้ต่อ'],
+  creator: ['ผมแค่ทำหน้าที่ของตัวเองครับ ใครยิงได้ก็ดีใจเหมือนกัน', 'ผมเห็นช่องก่อนคนอื่นเสมอ นั่นคือจุดแข็งของผม', 'ผมใจดีครับ ยกประตูให้เพื่อนก่อน เดี๋ยวนัดหน้าเขาคืน'],
+  cupwin: ['เป็นผลงานของทั้งสโมสรครับ ผมแค่ขอเป็นส่วนหนึ่ง', 'นี่เป็นแค่ถ้วยแรกครับ ผมหิวมากกว่านี้', 'ตอนนี้ขอไปฉลองก่อนครับ ค่าเลี้ยงเดี๋ยวทีมออกให้'],
+  topwin: ['ทุกคนทุ่มเทเต็มที่ครับ เราทำตามแผนของโค้ชได้ดี', 'เราคือทีมที่ดีกว่า และวันนี้สนามพิสูจน์แล้ว', 'ผมว่ามื้อเที่ยงก่อนเกมเป็นกุญแจนะครับ'],
+  wall: ['ทุกคนช่วยกันปิดพื้นที่ครับ ผมแค่ทำหน้าที่ให้ดีที่สุด', 'ไม่มีกองหน้าคนไหนผ่านผมไปง่าย ๆ ครับ', 'ผมแค่ขวางทางเขาไว้เฉย ๆ ครับ เขาก็เลยเดินไปทางอื่น'],
+  bigloss: ['ต้องรับผิดชอบร่วมกันครับ ผมจะกลับไปแก้ไขในส่วนของตัวเอง', 'นัดเดียวไม่ได้บอกอะไรครับ เราจะกลับมาแข็งแกร่งกว่าเดิม', 'ขอลืมนัดนี้ไปก่อนครับ ขอไปกินข้าวให้อารมณ์ดีก่อน'],
+  oldclub: ['ผมเคารพและขอบคุณที่นั่นเสมอครับ เป็นสโมสรที่ให้โอกาสผม', 'วันนี้ผมมาเพื่อชนะ ไม่ว่าจะเจอใครก็ตาม', 'เจอเพื่อนเก่าก็ทักทายกันตามประสาครับ แต่ขอสามแต้มกลับบ้านนะ'],
+  critic: ['ทุกคำวิจารณ์ทำให้ผมพัฒนาครับ ผมรับฟังและจะทำให้ดีขึ้น', 'ผมให้สนามเป็นคนตอบครับ และคิดว่าสนามตอบไปแล้ว', 'ขอบคุณที่สนใจผมนะครับ นัดหน้าผมจะตั้งใจให้เขามีเรื่องเขียนใหม่'],
+  awards: ['แค่ได้ถูกเอ่ยชื่อก็เป็นเกียรติแล้วครับ', 'ผมทำผลงานมาดีทั้งปี คิดว่าสมควรได้กลับบ้านพร้อมรางวัล', 'ผมเตรียมสุนทรพจน์ไว้แล้วนะครับ ถ้าไม่ได้ก็เก็บไว้ปีหน้า']
+};
+const OFF_TONES = ['🙏 ถ่อมตัว', '😎 มั่นใจ', '😄 ขำๆ'];
+
+function offInterviewUI(set, close, kind, vars) {
+  const q = OFF_FILL(OFF_Q[kind], vars);
+  const answered = text => {
+    const hl = OFF_E('div', 'off-post'); hl.append(OFF_E('div', 'off-who', '📰 พาดหัวข่าว'), document.createTextNode(`${P.name}: “${text}”`));
+    set(hl, OFF_B('ตกลง', 'btn-gold', close));
+  };
+  const menu = () => {
+    const bx = OFF_E('div', 'gm-btns');
+    OFF_TONES.forEach((t, i) => bx.appendChild(OFF_B(t, 'btn-gold', () => answered(OFF_A[kind][i]))));
+    bx.appendChild(OFF_B('⌨️ พิมพ์เอง', 'btn-blue', () => offTyping(set, { title: '🎙️ ' + q, submit: '📤 ตอบนักข่าว', back: 'กลับ', onSubmit: answered, onBack: menu })));
+    bx.appendChild(OFF_B('🚶 ไม่ให้สัมภาษณ์', 'btn-red', close));
+    set(OFF_E('div', 'off-head', kind === 'awards' ? '🎙️ สัมภาษณ์บนพรมแดง' : '🎙️ นักข่าวขอสัมภาษณ์หลังเกม'), OFF_E('div', 'gm-text', q), bx);
+  };
+  menu();
+}
+function offRebuttalUI(set, close, c) {
+  const agent = agentHired ? (document.getElementById('agentActiveName').textContent || 'เอเย่นต์') : null;
+  const ga = `ลงสนาม ${matchMinutesPlayed} นาที · ยิง ${matchGoals} · แอสซิสต์ ${matchAssists} · เรตติ้ง ${matchRating.toFixed(1)}`;
+  const quote = OFF_E('div', 'off-quote', '🗞️ “' + c.text + '”');
+  const posted = text => {
+    const p = OFF_E('div', 'off-post'); p.append(OFF_E('div', 'off-who', '📱 ' + P.name + ' · โพสต์เมื่อสักครู่'), document.createTextNode(text));
+    set(p, OFF_B('ตกลง', 'btn-gold', close));
+  };
+  const menu = () => {
+    const bx = OFF_E('div', 'gm-btns');
+    bx.appendChild(OFF_B('✍️ โพสต์ตอบกลับ', 'btn-gold', () => offTyping(set, { title: '📱 โพสต์ตอบกลับคำวิจารณ์', placeholder: 'พิมพ์อะไรก็ได้...', submit: '📤 โพสต์', back: 'กลับ', onSubmit: posted, onBack: menu })));
+    bx.appendChild(OFF_B('🤐 ปล่อยผ่าน', 'btn-blue', close));
+    if (agent) bx.appendChild(OFF_B('💼 ให้เอเย่นต์จัดการแทน', 'btn-blue', () => {
+      const st = ['ผลงานของ ' + P.name + ' ในสนามคือคำตอบที่ดีที่สุดครับ', P.name + ' ขอให้ผลงานในสนามพูดแทน และจะตั้งใจเต็มที่ต่อไปครับ'][OFF_RND(2)];
+      const p = OFF_E('div', 'off-post'); p.append(OFF_E('div', 'off-who', '💼 แถลงการณ์โดย ' + agent), document.createTextNode(st));
+      set(p, OFF_B('ตกลง', 'btn-gold', close));
+    }));
+    const msg = agent ? `"ผลงานนัดนี้ทำให้คำวิจารณ์นั้นดูไม่ถูกต้องเลยครับ คุณอยากทำอะไรกับมันไหม?"` : 'ผลงานนัดนี้ทำให้คำวิจารณ์นั้นดูไม่ถูกต้อง คุณอยากตอบกลับไหม?';
+    set(OFF_E('div', 'off-head', agent ? '💼 ' + agent : '📣 หลังจบเกม'), quote, OFF_E('div', 'gm-text', ga + '\n\n' + msg), bx);
+  };
+  menu();
+}
+
+function offPost() {
+  if (!P || P.retired) return;
+  const played = matchMinutesPlayed > 0, c = offToday && offToday.critic;
+  const vars = { opp: currentOpponent ? currentOpponent.name : '', score: `${homeScore}-${awayScore}`, a: matchAssists, name: P.name };
+  const proven = !!c && offProven(c);
+  if (c && proven) {
+    const iv = offInterviewKind();
+    if (iv) offShow((set, close) => offInterviewUI(set, close, 'critic', { ...vars, c: c.text }));
+    else offShow((set, close) => offRebuttalUI(set, close, c));
+  } else if (!c && (P.offCd || 0) === 0) {
+    const iv = offInterviewKind();
+    if (iv && Math.random() < 0.7) { P.offCd = 4 + OFF_RND(2); offShow((set, close) => offInterviewUI(set, close, iv, vars)); }
+  }
+  if (played) { P.dry = matchGoals + matchAssists > 0 ? 0 : (P.dry || 0) + 1; P.badRun = matchRating < 6.0 ? (P.badRun || 0) + 1 : 0; }
+  if ((P.offCd || 0) > 0) P.offCd--;
+  offToday = null;
+}
+
+const _offStart = startLiveMatch;
+startLiveMatch = function () {
+  if (natMatch) return _offStart();
+  if (!hasTrainedThisWeek && !hasRestedThisWeek) return;
+  offToday = { critic: null };
+  const c = offPickCritic();
+  if (!c) return _offStart();
+  offToday.critic = c; P.offCd = 4 + OFF_RND(2);
+  offShow((set, close) => {
+    set(OFF_E('div', 'off-head', '🗞️ ข่าวก่อนเกม'), OFF_E('div', 'off-quote', `นักวิจารณ์ฟุตบอลเขียนถึง ${P.name}:\n“${c.text}”`),
+      OFF_B('⚽ ไปแข่ง', 'btn-gold', () => { close(); _offStart(); }));
+  });
+};
+const _offFinish = finishMatchDay;
+finishMatchDay = function () {
+  if (!natMatch) { try { offPost(); } catch (e) { console.error(e); } }
+  _offFinish();
+};
+const _offCeremony = runCeremony;
+runCeremony = function (defs, ctx, done) {
+  if (!ctx.contender) return _offCeremony(defs, ctx, done);
+  const names = defs.filter(d => d.myV > 0 && d.myRank < 3).map(d => d.title).join(' · ');
+  offDialog((set, close) => offInterviewUI(set, close, 'awards', { awards: names, name: P.name }), () => _offCeremony(defs, ctx, done));
+};
+</script>
+
 </body>
 </html>
