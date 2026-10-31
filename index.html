@@ -269,6 +269,7 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
 @keyframes acfall{to{transform:translateY(520px) rotate(540deg);opacity:0}}
 @keyframes acfade{from{opacity:0}to{opacity:1}}
 @keyframes acglow{from{box-shadow:0 0 30px rgba(232,194,90,.4)}to{box-shadow:0 0 60px rgba(255,214,102,.9)}}
+.dd-view .dd-label{white-space:normal;line-height:1.2}
 </style>
 </head>
 <body>
@@ -666,10 +667,18 @@ let div2Teams = DIV2_NAMES.map((n, i) => ({ name: n, code: 'D2', rating: 54 + ((
 let youthTeams = leagueTeams.map(t => ({ ...t }));
 let tableView = null, statView = 'table';
 function setStatView(v) { statView = v; renderLeagueTable(); }
+function hashStr(x) { let h = 7; for (let i = 0; i < x.length; i++) h = (h * 31 + x.charCodeAt(i)) >>> 0; return h; }
+function ageOfPl(pl) { if (pl.age == null) { const h = hashStr(pl.n); pl.age = pl.senior ? 27 + h % 8 : 17 + h % 9; pl.ageSeason = currentSeason; } return pl.age + (currentSeason - (pl.ageSeason || currentSeason)); }
+function gkOf(t) { if (!t.gk) { const h = hashStr(t.name + (youthTeams.includes(t) ? 'y' : 'f')); t.gk = { n: SQ_FN[h % SQ_FN.length] + ' ' + SQ_LN[(h >> 5) % SQ_LN.length], cs: 0 }; } return t.gk; }
 function playerStatsHTML(table, lvl) {
-  const key = statView === 'goals' ? 'g' : 'a', POS = { FW: 'กองหน้า', MF: 'กองกลาง', DF: 'กองหลัง' }, rows = [];
-  table.forEach(tm => squadOf(tm).forEach(pl => rows.push({ n: pl.n, club: tm.name, pos: POS[pl.r], v: pl[key] || 0 })));
-  if ((lvl === 'first' && isFirstTeam()) || (lvl === 'youth' && !isFirstTeam())) rows.push({ n: P.name, club: P.club, pos: P.pos, v: key === 'g' ? P.season.goals : P.season.assists, me: true });
+  const key = statView === 'goals' ? 'g' : 'a', POS = { FW: 'กองหน้า', MF: 'กองกลาง', DF: 'กองหลัง' }, rows = [], mine = (lvl === 'first' && isFirstTeam()) || (lvl === 'youth' && !isFirstTeam());
+  if (statView === 'cs') {
+    table.forEach(tm => { if (mine && P.pos === 'GK' && tm.name === P.club) return; const k = gkOf(tm); rows.push({ n: k.n, club: tm.name, pos: 'ผู้รักษาประตู', v: k.cs || 0 }); });
+    if (mine && P.pos === 'GK') rows.push({ n: P.name, club: P.club, pos: P.pos, v: P.season.cs || 0, me: true });
+  } else {
+    table.forEach(tm => squadOf(tm).forEach(pl => rows.push({ n: pl.n, club: tm.name, pos: POS[pl.r], v: pl[key] || 0 })));
+    if (mine) rows.push({ n: P.name, club: P.club, pos: P.pos, v: key === 'g' ? P.season.goals : P.season.assists, me: true });
+  }
   rows.sort((a, b) => b.v - a.v);
   let rank = 0, prev = null;
   return rows.slice(0, 15).map((r, i) => { if (r.v !== prev) { rank = i + 1; prev = r.v; } return `<div style="display:flex; align-items:center; gap:10px; padding:10px 6px; border-bottom:1px solid rgba(255,255,255,.12);${r.me ? ' background:rgba(255,210,63,.2); border-radius:10px;' : ''}"><div style="width:26px; text-align:center; color:var(--text-muted);">${rank}</div><div style="flex:1; min-width:0;"><div style="font-weight:700;">${r.n}</div><div style="font-size:12px; color:var(--text-muted);">${r.club} · ${r.pos}</div></div><div style="font-family:var(--font-title); font-size:20px; color:var(--accent-gold);">${r.v}</div></div>`; }).join('');
@@ -1716,6 +1725,7 @@ function showMatchSummary() {
   if (natMatch) { natSummary(); return; }
   if (matchMinutesPlayed > 0) {
     if (homeScore > awayScore) matchRating = Math.min(10, matchRating + 0.5); else if (homeScore < awayScore) matchRating = Math.max(4, matchRating - 0.3);
+    if (awayScore === 0 && P.pos === 'GK' && !isCupMatch) P.season.cs = (P.season.cs || 0) + 1;
     if (awayScore === 0 && ['GK','CB','LB','RB','CDM'].includes(P.pos)) { matchRating = Math.min(10, matchRating + 0.6); P.coachTrust = Math.min(100, P.coachTrust + 2); addMatchLog("90'", '🧤 รักษาคลีนชีตได้!', 'highlight'); }
   }
   if (matchMinutesPlayed > 0) P.coachTrust = Math.min(100, P.coachTrust + (matchRating >= 8 ? 3 : matchRating >= 7 ? 2 : matchRating >= 6 ? 1 : 0));
@@ -1843,22 +1853,25 @@ function finishNational() {
 }
 /* ===== พิธีมอบรางวัลประจำปี (ไทยลีก 1) ===== */
 function ceremonyAwards() {
-  const lvl = 'ไทยลีก 1', yr = currentSeason, mg = P.season.goals, ma = P.season.assists;
-  const rows = []; leagueTeams.forEach(t => squadOf(t).forEach(pl => rows.push({ n: pl.n, club: t.name, g: pl.g || 0, a: pl.a || 0 })));
-  const all = rows.concat([{ n: P.name, club: P.club, g: mg, a: ma, me: true }]);
+  const lvl = 'ไทยลีก 1', yr = currentSeason, mg = P.season.goals, ma = P.season.assists, mcs = P.season.cs || 0, isGK = P.pos === 'GK';
+  const rows = []; leagueTeams.forEach(t => squadOf(t).forEach(pl => rows.push({ n: pl.n, club: t.name, g: pl.g || 0, a: pl.a || 0, age: ageOfPl(pl) })));
+  const me = { n: P.name, club: P.club, g: mg, a: ma, cs: mcs, age: P.age, me: true };
+  const all = rows.concat([me]);
+  const gks = leagueTeams.filter(t => !(isGK && t.name === P.club)).map(t => ({ n: gkOf(t).n, club: t.name, cs: gkOf(t).cs || 0 })).concat(isGK ? [me] : []);
   const rank = (arr, f) => arr.map(r => ({ ...r, v: f(r) })).sort((x, y) => y.v - x.v || (y.me ? 1 : 0) - (x.me ? 1 : 0));
   const defs = [
-    { icon: '🛡️', title: `นักเตะยอดเยี่ยมของสโมสร ${P.club}`, awardName: `นักเตะยอดเยี่ยมของสโมสร ${P.club}`, unit: 'ประตู+แอสซิสต์', list: rank(all.filter(r => r.club === P.club), r => r.g + r.a), prize: 100000 },
-    { icon: '🅰️', title: `ยอดเพลย์เมคเกอร์${lvl}`, awardName: `ยอดเพลย์เมคเกอร์${lvl}`, unit: 'แอสซิสต์', list: rank(all, r => r.a), prize: 200000 },
-    { icon: '⚽', title: `ดาวซัลโว${lvl}`, awardName: `ดาวซัลโว${lvl}`, unit: 'ประตู', list: rank(all, r => r.g), prize: 300000 },
-    { icon: '🏆', title: `นักเตะยอดเยี่ยมแห่งปี ${lvl}`, awardName: `นักเตะยอดเยี่ยมแห่งปี ${lvl}`, unit: 'ประตู+แอสซิสต์', list: rank(all, r => r.g + r.a), prize: 500000 }
-  ];
+    { icon: '🌱', title: `ดาวรุ่งยอดเยี่ยม${lvl} (อายุไม่เกิน 20 ปี)`, awardName: `ดาวรุ่งยอดเยี่ยม${lvl}`, unit: 'ประตู+แอสซิสต์', list: rank(all.filter(r => r.age <= 20), r => r.g + r.a), prize: 100000, detail: `${mg} ประตู ${ma} แอสซิสต์` },
+    { icon: '🧤', title: `โกลยอดเยี่ยม${lvl}`, awardName: `โกลยอดเยี่ยม${lvl}`, unit: 'คลีนชีต', list: rank(gks, r => r.cs), prize: 100000, detail: `${mcs} คลีนชีต` },
+    { icon: '🅰️', title: `ยอดเพลย์เมคเกอร์${lvl}`, awardName: `ยอดเพลย์เมคเกอร์${lvl}`, unit: 'แอสซิสต์', list: rank(all, r => r.a), prize: 200000, detail: `${ma} แอสซิสต์` },
+    { icon: '⚽', title: `ดาวซัลโว${lvl}`, awardName: `ดาวซัลโว${lvl}`, unit: 'ประตู', list: rank(all, r => r.g), prize: 300000, detail: `${mg} ประตู` },
+    { icon: '🏆', title: `นักเตะยอดเยี่ยมแห่งปี ${lvl}`, awardName: `นักเตะยอดเยี่ยมแห่งปี ${lvl}`, unit: isGK ? 'คะแนนผลงาน' : 'ประตู+แอสซิสต์', list: rank(all, r => r.g + r.a + (r.me && isGK ? r.cs : 0)), prize: 500000, detail: isGK ? `${mcs} คลีนชีต` : `${mg} ประตู ${ma} แอสซิสต์` }
+  ].filter(d => d.list.length);
   let total = 0, won = 0;
   defs.forEach(d => {
     d.winner = d.list.find(r => !r.me || r.v > 0) || d.list[0];
     d.cands = d.list.slice(0, 5); if (!d.cands.includes(d.winner)) d.cands.push(d.winner);
-    const me = d.list.find(r => r.me); d.myRank = d.list.indexOf(me); d.myV = me.v;
-    if (d.winner.me) { P.awards.push({ name: d.awardName, year: yr, detail: `${mg} ประตู ${ma} แอสซิสต์` }); P.bankBalance += d.prize; total += d.prize; won++; }
+    const mine = d.list.find(r => r.me); d.myRank = mine ? d.list.indexOf(mine) : 99; d.myV = mine ? mine.v : 0;
+    if (d.winner.me) { P.awards.push({ name: d.awardName, year: yr, detail: d.detail }); P.bankBalance += d.prize; total += d.prize; won++; }
   });
   if (won) P.coachTrust = Math.min(100, P.coachTrust + 5 * won);
   const contender = defs.some(d => d.myV > 0 && d.myRank < 3);
@@ -1948,7 +1961,7 @@ function advanceSeason() {
   (P.history = P.history || []).push({ season: currentSeason, age: P.age, club: P.club, apps: P.season.apps, goals: P.season.goals, assists: P.season.assists, rating: P.season.rN ? +(P.season.rSum / P.season.rN).toFixed(1) : 0, pos: tbl().findIndex(t => t.name === P.club) + 1 });
   currentSeason++; currentWeek = 1; P.age++;
   runPromotionRelegation();
-  [leagueTeams, youthTeams, div2Teams].forEach(tb => tb.forEach(t => { t.p = t.w = t.d = t.l = t.pts = 0; t.gf = 0; t.ga = 0; if (t.squad) t.squad.forEach(pl => { pl.g = 0; pl.a = 0; }); t.rating = Math.max(50, Math.min(80, t.rating + Math.floor(Math.random() * 5) - 2)); }));
+  [leagueTeams, youthTeams, div2Teams].forEach(tb => tb.forEach(t => { t.p = t.w = t.d = t.l = t.pts = 0; t.gf = 0; t.ga = 0; if (t.squad) t.squad.forEach(pl => { pl.g = 0; pl.a = 0; }); if (t.gk) t.gk.cs = 0; t.rating = Math.max(50, Math.min(80, t.rating + Math.floor(Math.random() * 5) - 2)); }));
   cupAlive = true; P.season = { apps: 0, goals: 0, assists: 0, yellows: 0, reds: 0, rSum: 0, rN: 0 };
   alert(`📅 จบฤดูกาล! เข้าสู่ปีที่ ${currentSeason} (อายุ ${P.age} ปี)`);
   if (P.age >= 31) {
@@ -1977,6 +1990,7 @@ function retireCareer() {
 
 function playRound(table, userInvolved) {
   const res = (a, b, ga, gb) => {
+    if (gb === 0) gkOf(a).cs = (gkOf(a).cs || 0) + 1; if (ga === 0) gkOf(b).cs = (gkOf(b).cs || 0) + 1;
     a.p++; b.p++; a.gf = (a.gf || 0) + ga; a.ga = (a.ga || 0) + gb; b.gf = (b.gf || 0) + gb; b.ga = (b.ga || 0) + ga;
     if (ga > gb) { a.w++; a.pts += 3; b.l++; } else if (ga < gb) { b.w++; b.pts += 3; a.l++; } else { a.d++; b.d++; a.pts++; b.pts++; }
   };
@@ -2013,7 +2027,7 @@ function runPromotionRelegation() {
 }
 
 function setTableView(v) { tableView = v; renderLeagueTable(); }
-const DD_VIEW = [['table','📊','ตารางคะแนน'],['goals','⚽','Top Scorers'],['assists','🅰️','Top Assists']];
+const DD_VIEW = [['table','📊','ตารางคะแนน'],['goals','⚽','Top Scorers'],['assists','🅰️','Top Assists'],['cs','🧤','Top Clean Sheets']];
 const DD_LEAGUE = [['youth','','U18'],['first','','ไทยลีก 1'],['div2','','ไทยลีก 2']];
 let ddOpenKey = null;
 const CHEV = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#14306b" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
@@ -2188,17 +2202,18 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
 /* ===== สไตล์ผู้เล่นกองหน้าเน้นจบสกอร์ (Poacher) ===== */
 (function () {
   const F = (t, r) => C(t, r, 'sh', 'GOAL'), D = (t, r) => C(t, r, 'pc', 'GOAL'), A = (t, r) => C(t, r, 'pa', 'ASSIST');
+  const SF = t => C(t, 'S', 'pa', 'PLAY');
   SCEN.st = [
-    SC('st1','บอลเด้งหน้าเขตโทษ!','บอลหลุดจากการแย่งกันมาตกตรงหน้าคุณ ผู้รักษาประตูยืนกลางประตู กองหลังยังเข้ามาไม่ทัน',[F('ยิงเสาไกลด้วยข้างเท้าใน','N'),F('ซัดเสาใกล้แรง ๆ','N'),F('แตะเบา ๆ เข้ามุมล่างด้านไกล','S'),F('ยิงสวนวอลเลย์ไม่ต้องรับบอล','R'),F('ชิปข้ามผู้รักษาประตูที่ออกมา','R')]),
-    SC('st2','ลูกทะลุช่อง! คุณหลุดเดี่ยว','คุณวิ่งสวนหลังแนวรับตามลูกทะลุช่อง ผู้รักษาประตูกำลังวิ่งออกมาปิดมุม เพื่อนตามมาไกล ๆ',[F('ยิงเสียบมุมล่างฝั่งเสาไกล','N'),F('ยิงเสาใกล้ก่อนที่เขาจะปิดมุม','N'),D('เลี้ยงหลบผู้รักษาประตูแล้วยิงเข้าประตูว่าง','N'),F('ชิปข้ามหัวผู้รักษาประตู','R'),A('ทดให้เพื่อนที่ตามมาแตะเข้า','S')]),
-    SC('st3','ลูกครอสโด่งเข้ากลางกรอบ!','บอลลอยมากลางกรอบเขตโทษ กองหลังสองคนประกบคุณ ผู้รักษาประตูยืนอยู่ในเส้น',[F('โหม่งกดลงมุมล่างเสาใกล้','N'),F('โหม่งเข้ามุมไกลสวนทางผู้รักษาประตู','N'),F('กระโดดโหม่งแย่งเหนือกองหลังสองคน','R'),F('ขยับหลบหลังกองหลังแล้วโหม่งเสาไกล','N'),F('โหม่งเบา ๆ ลงพื้นให้เด้งเข้าประตู','S')]),
-    SC('st4','ผู้รักษาประตูปัดบอลเด้งกลับ!','บอลเด้งมาตรงหน้าคุณในกรอบเสี้ยววินาที ผู้รักษาประตูล้มอยู่กับพื้น ไม่มีกองหลังอยู่ใกล้',[C('ซ้ำเข้าประตูว่าง ๆ','E','sh','GOAL'),F('ซ้ำสุดแรงทันที','N'),F('ซ้ำสวนวอลเลย์ก่อนบอลตก','R'),F('ซ้ำด้วยหลังเท้า','R'),F('ซ้ำเบา ๆ เข้ามุมล่าง','S')]),
-    SC('st5','เพื่อนเปิดต่ำ ๆ มาเสาใกล้!','บอลต่ำพุ่งเข้ามาเสาใกล้ คุณวิ่งตัดหน้ากองหลังเข้าไปได้ทัน ผู้รักษาประตูขยับมาตามบอล',[F('แตะเข้าเสาใกล้ด้วยข้างเท้า','N'),F('เฉี่ยวบอลเปลี่ยนทิศเข้าประตู','R'),F('ซัดเสียบเสาไกลทันที','N'),F('ใช้ส้นเท้าเบี่ยงเข้าประตู','R'),F('หยุดบอลแล้วยิงมุมล่าง','S')]),
-    SC('st6','เจอผู้รักษาประตูตัวต่อตัว!','มีแค่คุณกับผู้รักษาประตูที่ออกมาปิด กองหลังตามมาข้างหลัง ยังไม่ทัน',[F('ยิงแรงเข้ามุมล่าง','N'),F('ลอดขาผู้รักษาประตู','R'),D('เลี้ยงหลบแล้วยิงเข้าประตูว่าง','N'),F('ชิปข้ามหัว','R'),F('แตะข้างเท้าในเข้ามุมล่างด้านไกล','S')]),
-    SC('st7','ลูกเตะมุมของทีมเรา!','คุณยืนหน้ากรอบเขตโทษกับกองหลังที่ประกบ บอลจะลอยเข้ามาแถวเสาไกล',[F('ขึ้นโหม่งเสาใกล้','N'),F('ซ้อนหลังกองหลังไปโหม่งเสาไกล','R'),F('ถ่วงจังหวะแล้วพุ่งเข้าโหม่งกลางกรอบ','N'),F('ขยับไปยืนว่างเสาไกลแล้วโหม่งลงพื้น','S'),F('ฟาดวอลเลย์ถ้าบอลเด้งออกมา','R')]),
-    SC('st8','กองหลังเคลียร์พลาด!','บอลหลุดมาที่เสาไกล คุณยืนอยู่คนเดียวไม่มีใครประกบ ผู้รักษาประตูยังกลับตัวไม่ทัน',[F('ยิงเต็มข้อทันที','N'),F('ปาดเข้ามุมไกล','N'),F('วอลเลย์ข้างเท้านอก','R'),F('ชิปข้ามผู้รักษาประตู','R'),F('แตะเบา ๆ เข้าประตูด้วยข้างเท้า','S')]),
-    SC('st9','ถูกกองหลังประกบแน่นในกรอบ','กองหลังเกาะหลังคุณ ผู้รักษาประตูยืนค่อนไปเสาไกล เหลือช่องเล็ก ๆ ทางเสาใกล้',[F('ใช้ตัวกันแล้วหมุนยิงเสาใกล้ทันที','N'),F('หันหลังหลอกแล้วหมุนยิงเสาไกล','R'),F('เด้งบอลด้วยอกแล้วยิงวอลเลย์','R'),F('ลากหลบหนึ่งทีแล้วยิงจากขอบเขตโทษ','N'),F('ยิงต่ำ ๆ ลอดระหว่างขากองหลัง','N')]),
-    SC('st10','ลูกยาวส่งตรงหาคุณ!','กองหลังคู่แข่งยืนอยู่ข้างหลัง ผู้รักษาประตูออกจากเส้นมาไกลเกินไป',[F('ชิปข้ามผู้รักษาประตูที่ออกมา','R'),F('ยิงวอลเลย์ทันทีไม่ต้องรับบอล','R'),F('เด้งบอลด้วยอกแล้วยิงเสาไกล','N'),D('ลากเข้าไปเลี้ยงหลบผู้รักษาประตูแล้วยิง','R'),F('ยิงไกลจากกลางสนามเข้าประตูที่ว่าง','R')])
+    SC('st1','บอลเด้งหน้าเขตโทษ!','บอลหลุดจากการแย่งกันมาตกตรงหน้าคุณ ผู้รักษาประตูยืนกลางประตู กองหลังยังเข้ามาไม่ทัน',[F('ยิงเสาไกลด้วยข้างเท้าใน','N'),F('ซัดเสาใกล้แรง ๆ','N'),F('ยิงสวนวอลเลย์ไม่ต้องรับบอล','R'),A('เปิดทะลุให้เพื่อนที่วิ่งขึ้นมาทางขวา','N'),SF('ทดกลับให้กองกลางตั้งเกมใหม่')]),
+    SC('st2','ลูกทะลุช่อง! คุณหลุดเดี่ยว','คุณวิ่งสวนหลังแนวรับตามลูกทะลุช่อง ผู้รักษาประตูกำลังวิ่งออกมาปิดมุม เพื่อนตามมาไกล ๆ',[F('ยิงเสียบมุมล่างฝั่งเสาไกล','N'),F('ชิปข้ามหัวผู้รักษาประตู','R'),A('ทดข้างให้เพื่อนที่ตามมาแตะเข้า','N'),A('ลากดึงผู้รักษาประตูแล้วจ่ายให้เพื่อนยิง','N'),SF('ชะลอบอลรอเพื่อนขึ้นมาสมทบ')]),
+    SC('st3','ลูกครอสโด่งเข้ากลางกรอบ!','บอลลอยมากลางกรอบเขตโทษ กองหลังสองคนประกบคุณ ผู้รักษาประตูยืนอยู่ในเส้น',[F('โหม่งเข้ามุมไกลสวนทางผู้รักษาประตู','N'),F('กระโดดโหม่งแย่งเหนือกองหลังสองคน','R'),A('โหม่งทิ้งให้เพื่อนที่ว่างอยู่เสาไกล','N'),SF('ปล่อยให้เพื่อนที่ว่างกว่าเข้าโหม่ง'),SF('ถอยออกมาเก็บบอลที่หลุดจากกรอบ')]),
+    SC('st4','ผู้รักษาประตูปัดบอลเด้งกลับ!','บอลเด้งมาตรงหน้าคุณในกรอบเสี้ยววินาที ผู้รักษาประตูล้มอยู่กับพื้น ไม่มีกองหลังอยู่ใกล้',[C('ซ้ำเข้าประตูว่าง ๆ','E','sh','GOAL'),F('ซ้ำสุดแรงทันที','N'),F('ซ้ำสวนวอลเลย์ก่อนบอลตก','R'),A('เปิดให้เพื่อนที่เสาสองซ้ำ','N'),SF('ส่งกลับให้เพื่อนตั้งหลักใหม่')]),
+    SC('st5','เพื่อนเปิดต่ำ ๆ มาเสาใกล้!','บอลต่ำพุ่งเข้ามาเสาใกล้ คุณวิ่งตัดหน้ากองหลังเข้าไปได้ทัน ผู้รักษาประตูขยับมาตามบอล',[F('แตะเข้าเสาใกล้ด้วยข้างเท้า','N'),F('ซัดเสียบเสาไกลทันที','N'),A('ปล่อยบอลผ่านให้เพื่อนที่วิ่งตามมาเสาสอง','N'),A('เล่นวันทูกับกองกลางที่ซ้อนขึ้นมา','N'),SF('ชะลอบอลรอเพื่อนขึ้นมา')]),
+    SC('st6','เจอผู้รักษาประตูตัวต่อตัว!','มีแค่คุณกับผู้รักษาประตูที่ออกมาปิด กองหลังตามมาข้างหลัง ยังไม่ทัน',[F('ยิงแรงเข้ามุมล่าง','N'),D('เลี้ยงหลบแล้วยิงเข้าประตูว่าง','N'),F('ชิปข้ามหัว','R'),A('ทดให้เพื่อนที่ตามมายิง','N'),SF('ถือบอลรอเพื่อนขึ้นมาสมทบ')]),
+    SC('st7','ลูกเตะมุมของทีมเรา!','คุณยืนหน้ากรอบเขตโทษกับกองหลังที่ประกบ บอลจะลอยเข้ามาแถวเสาไกล',[F('ขึ้นโหม่งเสาใกล้','N'),F('ซ้อนหลังกองหลังไปโหม่งเสาไกล','R'),A('โหม่งต่อให้เพื่อนที่ยืนอยู่ข้างหลัง','N'),SF('ยืนบล็อกผู้รักษาประตูให้เพื่อน'),SF('ถอยออกมาตั้งรับกันสวนกลับ')]),
+    SC('st8','กองหลังเคลียร์พลาด!','บอลหลุดมาที่เสาไกล คุณยืนอยู่คนเดียวไม่มีใครประกบ ผู้รักษาประตูยังกลับตัวไม่ทัน',[F('ยิงเต็มข้อทันที','N'),F('ปาดเข้ามุมไกล','N'),A('เปิดต่ำเข้ากลางให้เพื่อนที่ตามมา','N'),A('จ่ายกลับให้เพื่อนที่วิ่งเข้ามาหน้าประตู','N'),SF('ชะลอรอเพื่อนขึ้นมาให้ครบ')]),
+    SC('st9','ถูกกองหลังประกบแน่นในกรอบ','กองหลังเกาะหลังคุณ ผู้รักษาประตูยืนค่อนไปเสาไกล เหลือช่องเล็ก ๆ ทางเสาใกล้',[F('ใช้ตัวกันแล้วหมุนยิงเสาใกล้ทันที','N'),F('ลากหลบหนึ่งทีแล้วยิงจากขอบเขตโทษ','N'),A('ลงต่ำแล้วเปิดทะลุให้ปีก','N'),SF('ลงมารับบอลต่ำแล้วทดกลับให้กองกลาง'),SF('ใช้ตัวเบียดกองหลังรอเพื่อนขึ้นมาช่วย')]),
+    SC('st10','ลูกยาวส่งตรงหาคุณ!','กองหลังคู่แข่งยืนอยู่ข้างหลัง ผู้รักษาประตูออกจากเส้นมาไกลเกินไป',[F('ชิปข้ามผู้รักษาประตูที่ออกมา','R'),F('ยิงวอลเลย์ทันทีไม่ต้องรับบอล','R'),F('เด้งบอลด้วยอกแล้วยิงเสาไกล','N'),A('เบี่ยงบอลต่อให้เพื่อนที่วิ่งตามมา','N'),SF('เด้งบอลด้วยอกแล้วทดกลับให้กองกลาง')])
   ];
   SCEN.wg = [
     SC('wg1','ลากเลี้ยงกับแบ็กริมเส้น!','เหลือแค่คุณกับแบ็กคู่แข่งหนึ่งต่อหนึ่ง ในกรอบผู้รักษาประตูยืนค่อนไปทางเสาใกล้',[F('ตัดเข้าในด้วยเท้าถนัดแล้วยิงเสาไกล','N'),F('ซัดเสาใกล้ทันทีก่อนแบ็กปิด','N'),D('ลากผ่านแบ็กด้วยความเร็วแล้วยิงมุมแคบ','R'),F('ยิงโค้งเข้ามุมไกลบนด้วยเท้าถนัด','R'),F('แตะเข้ามุมล่างด้านไกลแบบไม่ต้องรีบ','S')]),
