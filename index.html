@@ -676,12 +676,13 @@ function playerStatsHTML(table, lvl) {
     table.forEach(tm => { if (mine && P.pos === 'GK' && tm.name === P.club) return; const k = gkOf(tm); rows.push({ n: k.n, club: tm.name, pos: 'ผู้รักษาประตู', v: k.cs || 0 }); });
     if (mine && P.pos === 'GK') rows.push({ n: P.name, club: P.club, pos: P.pos, v: P.season.cs || 0, me: true });
   } else {
-    table.forEach(tm => squadOf(tm).forEach(pl => rows.push({ n: pl.n, club: tm.name, pos: POS[pl.r], v: pl[key] || 0 })));
-    if (mine) rows.push({ n: P.name, club: P.club, pos: P.pos, v: key === 'g' ? P.season.goals : P.season.assists, me: true });
+    table.forEach(tm => squadOf(tm).forEach(pl => rows.push({ n: pl.n, club: tm.name, pos: pl.pos || POS[pl.r], v: pl[key] || 0, m: Math.max(pl.m || 0, (pl[key] || 0) > 0 ? 1 : 0) })));
+    if (mine) rows.push({ n: P.name, club: P.club, pos: P.pos, v: key === 'g' ? P.season.goals : P.season.assists, m: P.season.apps, me: true });
   }
-  rows.sort((a, b) => b.v - a.v);
+  rows.sort((a, b) => (b.v - a.v) || ((a.m || 0) - (b.m || 0)));
   let rank = 0, prev = null;
-  return rows.slice(0, 15).map((r, i) => { if (r.v !== prev) { rank = i + 1; prev = r.v; } return `<div style="display:flex; align-items:center; gap:10px; padding:10px 6px; border-bottom:1px solid rgba(255,255,255,.12);${r.me ? ' background:rgba(255,210,63,.2); border-radius:10px;' : ''}"><div style="width:26px; text-align:center; color:var(--text-muted);">${rank}</div><div style="flex:1; min-width:0;"><div style="font-weight:700;">${r.n}</div><div style="font-size:12px; color:var(--text-muted);">${r.club} · ${r.pos}</div></div><div style="font-family:var(--font-title); font-size:20px; color:var(--accent-gold);">${r.v}</div></div>`; }).join('');
+  const cap = statView === 'cs' ? '' : `<div style="font-size:12px; color:var(--text-muted); text-align:right; padding:0 6px 4px;">${statView === 'goals' ? 'ประตู' : 'แอสซิสต์'} | นัดที่ลงเล่น</div>`;
+  return cap + rows.slice(0, 15).map((r, i) => { if (r.v !== prev) { rank = i + 1; prev = r.v; } return `<div style="display:flex; align-items:center; gap:10px; padding:10px 6px; border-bottom:1px solid rgba(255,255,255,.12);${r.me ? ' background:rgba(255,210,63,.2); border-radius:10px;' : ''}"><div style="width:26px; text-align:center; color:var(--text-muted);">${rank}</div><div style="flex:1; min-width:0;"><div style="font-weight:700;">${r.n}</div><div style="font-size:12px; color:var(--text-muted);">${r.club} · ${r.pos}</div></div><div style="font-family:var(--font-title); font-size:20px; color:var(--accent-gold);">${r.v}${r.m !== undefined ? ' <span style="font-size:13px; color:var(--text-muted);">| ' + r.m + '</span>' : ''}</div></div>`; }).join('');
 }
 let matchBannedNow = false;
 let matchSubbedOff = false;
@@ -710,7 +711,8 @@ function ownGoalText() {
 function squadOf(t) {
   if (!t.squadFixed && SQUAD_DATA[t.name]) {
     const d = SQUAD_DATA[t.name][youthTeams.includes(t) ? 'youth' : 'first'];
-    t.squad = d.map(x => ({ ...x, w: x.r === 'FW' ? 4 : x.r === 'MF' ? 2 : 0.7 })); t.squadFixed = true;
+    const cnt = { FW: 0, MF: 0, DF: 0 }, POSL = { FW: ['ST', 'LW', 'RW'], MF: ['CAM', 'CM', 'CDM'], DF: ['CB', 'LB', 'RB'] }, WT = { ST: 5, LW: 3.5, RW: 3.5, CAM: 2.5, CM: 1.5, CDM: 0.8, CB: 0.8, LB: 0.5, RB: 0.5 };
+    t.squad = d.map(x => { const pos = (POSL[x.r] || ['ST'])[(cnt[x.r] = (cnt[x.r] || 0) + 1) - 1] || 'ST'; return { ...x, pos, w: WT[pos] || 1 }; }); t.squadFixed = true;
   }
   if (!t.squad) {
     const twin = [...leagueTeams, ...youthTeams, ...div2Teams].find(x => x.name === t.name && x !== t && x.squad);
@@ -732,8 +734,11 @@ function pickScorer(t, kind) {
   if (kind && !isCupMatch && !natMatch) pl[kind] = (pl[kind] || 0) + 1;
   return pl.n + (pl.senior && !youthTeams.includes(t) ? ' ⭐' : '');
 }
+let matchStamp = 0;
+function tickM(t) { squadOf(t).forEach(pl => { if (Math.random() < 0.88) { pl.m = (pl.m || 0) + 1; pl._pm = matchStamp; } }); }
+function markPlayed(pl) { if (pl._pm !== matchStamp) { pl._pm = matchStamp; pl.m = (pl.m || 0) + 1; } }
 function creditSim(t, n) {
-  for (let i = 0; i < n; i++) { const g = pickPlayer(t); g.g = (g.g || 0) + 1; if (Math.random() < 0.7) { const a = pickPlayer(t, g); a.a = (a.a || 0) + 1; } }
+  for (let i = 0; i < n; i++) { const g = pickPlayer(t); g.g = (g.g || 0) + 1; markPlayed(g); if (Math.random() < 0.7) { const a = pickPlayer(t, g); a.a = (a.a || 0) + 1; markPlayed(a); } }
 }
 
 function seniorsOf(t) { const y = youthTeams.includes(t); return squadOf(t).filter(x => y ? x.r === 'FW' : x.senior).slice(0, 2).map(x => x.n).join(', '); }
@@ -982,7 +987,7 @@ function updateDashboardUI() {
   document.getElementById('hudAge').textContent = `${P.age} ปี`;
   document.getElementById('hudFitness').textContent = `${P.fitness}%`;
   document.getElementById('hudWeek').textContent = `ปี ${currentSeason} (${currentWeek}/30)`;
-  document.getElementById('hudRole').textContent = P.role + (P.injuredWeeks > 0 ? ` 🩹(${P.injuredWeeks})` : '') + (P.banWeeks > 0 ? ` ⛔(${P.banWeeks})` : '') + (P.benchWeeks > 0 ? ` 🪑(${P.benchWeeks})` : '') + (isStarPlayer() ? ' ⭐' : '');
+  document.getElementById('hudRole').textContent = P.role + (P.injuredWeeks > 0 ? ` 🩹(${P.injuredWeeks})` : '') + (P.banWeeks > 0 ? ` ⛔(${P.banWeeks})` : '') + (P.benchWeeks > 0 ? ` 🪑(${P.benchWeeks})` : '') + (isStarPlayer() ? ' ⭐' : '') + (P.retirePlan ? ' 🎗️' : '');
 
   document.getElementById('stApps').textContent = P.season.apps;
   document.getElementById('stGoals').textContent = P.season.goals;
@@ -1008,7 +1013,8 @@ function updateDashboardUI() {
   }
 
   if (P.movedSeason === currentSeason) windowBadge.textContent += ' · ย้ายทีมแล้วในปีนี้ ย้ายอีกไม่ได้';
-  if (P.age >= 34) {
+  if (P.retirePlan) document.getElementById('btnRetire').classList.add('hidden');
+  else if (P.age >= 34) {
     document.getElementById('btnRetire').classList.remove('hidden');
   }
 
@@ -1271,6 +1277,13 @@ function checkMatchReady() {
 
 function startLiveMatch() {
   if (!natMatch && !hasTrainedThisWeek && !hasRestedThisWeek) return;
+  farewell = !natMatch && (P.retirePlan === 'now' || (P.retirePlan === 'season' && currentWeek === 30));
+  fwEmergency = farewell && (P.injuredWeeks > 0 || (P.banWeeks || 0) > 0);
+  if (farewell && !farewellShown) { farewellShown = true; cinematic(farewellIntroLines(), fwEmergency ? '🪑 ไปนั่งข้างสนาม' : '⚽ ลงสนาม', () => startLiveMatchCore()); return; }
+  startLiveMatchCore();
+}
+function startLiveMatchCore() {
+  if (!natMatch && !hasTrainedThisWeek && !hasRestedThisWeek) return;
   const fb = document.querySelector('#ratingSummaryBox button'); if (fb) fb.textContent = natMatch ? '➡️ ไปต่อ' : 'จบแมตช์ & ผ่านสัปดาห์';
   setScoreboardSide();
 
@@ -1288,8 +1301,8 @@ function startLiveMatch() {
   matchMinutesPlayed = 0;
   isPlayerWarmingUp = false;
   matchYellow = 0; matchRed = false; oppRed = false; matchSubbedOff = false;
-  const banned = !natMatch && (P.banWeeks || 0) > 0; matchBannedNow = banned; if (banned) { P.banWeeks--; alert('⛔ คุณถูกแบน นัดนี้ลงเล่นไม่ได้'); }
-  const benched = !natMatch && !banned && !(P.injuredWeeks > 0) && (P.benchWeeks || 0) > 0; if (benched) { P.benchWeeks--; alert('🪑 โค้ชให้คุณนั่งสำรองนัดนี้ เพราะฟอร์มไม่ดี'); }
+  const banned = !natMatch && (P.banWeeks || 0) > 0; matchBannedNow = banned; if (banned) { P.banWeeks--; if (!farewell) alert('⛔ คุณถูกแบน นัดนี้ลงเล่นไม่ได้'); }
+  const benched = !natMatch && !farewell && !banned && !(P.injuredWeeks > 0) && (P.benchWeeks || 0) > 0; if (benched) { P.benchWeeks--; alert('🪑 โค้ชให้คุณนั่งสำรองนัดนี้ เพราะฟอร์มไม่ดี'); }
 
   document.getElementById('scoreText').textContent = "0 - 0";
   document.getElementById('minuteText').textContent = "0'";
@@ -1297,7 +1310,7 @@ function startLiveMatch() {
 
   if (natMatch) {
     isPlayerOnField = natMatch.starter;
-  } else if (!(P.injuredWeeks > 0) && !banned && !benched && (P.role === "ตัวจริง" || P.role === "กัปตันทีม" || P.role === "ตัวจริงเยาวชน")) {
+  } else if ((farewell && !fwEmergency) || (!(P.injuredWeeks > 0) && !banned && !benched && (P.role === "ตัวจริง" || P.role === "กัปตันทีม" || P.role === "ตัวจริงเยาวชน"))) {
     isPlayerOnField = true;
   } else {
     isPlayerOnField = false;
@@ -1325,7 +1338,15 @@ function runMatchLoop() {
 
   if (isPlayerOnField) matchMinutesPlayed++;
 
-  if (isPlayerOnField && matchStarted && !matchRed && currentMinute >= 55 && currentMinute < 90) {
+  if (farewell && !fwEmergency && currentMinute === 80 && isPlayerOnField) {
+    clearInterval(matchTimer);
+    isPlayerOnField = false; isPlayerWarmingUp = false; matchSubbedOff = true;
+    addMatchLog(`80'`, '🔁 โค้ชเปลี่ยนตัวคุณออก', 'sub');
+    cinematic(farewellTributeLines(), '➡️ กลับสู่สนาม', () => { matchTimer = setInterval(runMatchLoop, 500); });
+    return;
+  }
+
+  if (isPlayerOnField && matchStarted && !farewell && !matchRed && currentMinute >= 55 && currentMinute < 90) {
     const bad = matchRating < 5.5 && Math.random() < 0.10;
     const tired = !bad && P.fitness < 30 && currentMinute >= 60 && Math.random() < 0.08;
     const rotate = !bad && !tired && currentMinute >= 75 && Math.random() < 0.012;
@@ -1422,7 +1443,7 @@ function penaltyShot(c) {
 }
 function simulateMinuteEvent(min) {
   if (!natMatch && !matchRed && min >= 3 && min <= 88 && Math.random() < 0.0004) { triggerPenalty(min); return; }
-  if (isPlayerOnField && !matchRed) {
+  if (isPlayerOnField && !matchRed && !farewell) {
     const dm = ['CB','CDM','LB','RB','CM'].includes(P.pos) ? 1.8 : 1;
     if (Math.random() < 0.0009 * dm) {
       matchYellow++; P.season.yellows = (P.season.yellows || 0) + 1; matchRating = Math.max(4, matchRating - 0.3);
@@ -1757,6 +1778,12 @@ function showMatchSummary() {
 
 function finishMatchDay() {
   if (natMatch) { natContinue(); return; }
+  if (farewell) {
+    const emer = fwEmergency; farewell = false; farewellShown = false; fwEmergency = false;
+    if (emer) cinematic(farewellTributeLines(true), '➡️ ต่อไป', () => endCareerSequence(false, true));
+    else endCareerSequence(false, false);
+    return;
+  }
   if (matchMinutesPlayed > 0) P.fitness = Math.max(0, P.fitness - 15);
   P.bankBalance += agentHired ? Math.round(P.wage * 0.95) : P.wage;
   P.fitness = Math.min(100, P.fitness + 5);
@@ -1799,6 +1826,7 @@ const NAT_CUPS = {
 };
 const VN_NAMES = ['เล ตวน คัง','ฟาม มินห์ ดึ๊ก','โฮ ก๊วก เวียด','ดั่ง ฮว่าง นาม','หวู่ ถั่น ฟง','บุ่ย กวาง ซอน','ตรัน ดิ่ง หลอก','ลือ ฮู ถั่ง','เจือง มินห์ ไห','ด่าว ซวน บาว'];
 let natMatch = null, natState = null;
+let farewell = false, farewellShown = false, fwEmergency = false;
 function myName() { return natMatch ? 'ทีมชาติไทย' : P.club; }
 function startNationalTeam(done) {
   if (!isFirstTeam() || P.age < 18) return false;
@@ -1961,7 +1989,7 @@ function advanceSeason() {
   (P.history = P.history || []).push({ season: currentSeason, age: P.age, club: P.club, apps: P.season.apps, goals: P.season.goals, assists: P.season.assists, rating: P.season.rN ? +(P.season.rSum / P.season.rN).toFixed(1) : 0, pos: tbl().findIndex(t => t.name === P.club) + 1 });
   currentSeason++; currentWeek = 1; P.age++;
   runPromotionRelegation();
-  [leagueTeams, youthTeams, div2Teams].forEach(tb => tb.forEach(t => { t.p = t.w = t.d = t.l = t.pts = 0; t.gf = 0; t.ga = 0; if (t.squad) t.squad.forEach(pl => { pl.g = 0; pl.a = 0; }); if (t.gk) t.gk.cs = 0; t.rating = Math.max(50, Math.min(80, t.rating + Math.floor(Math.random() * 5) - 2)); }));
+  [leagueTeams, youthTeams, div2Teams].forEach(tb => tb.forEach(t => { t.p = t.w = t.d = t.l = t.pts = 0; t.gf = 0; t.ga = 0; if (t.squad) t.squad.forEach(pl => { pl.g = 0; pl.a = 0; pl.m = 0; }); if (t.gk) t.gk.cs = 0; t.rating = Math.max(50, Math.min(80, t.rating + Math.floor(Math.random() * 5) - 2)); }));
   cupAlive = true; P.season = { apps: 0, goals: 0, assists: 0, yellows: 0, reds: 0, rSum: 0, rN: 0 };
   alert(`📅 จบฤดูกาล! เข้าสู่ปีที่ ${currentSeason} (อายุ ${P.age} ปี)`);
   if (P.age >= 31) {
@@ -1977,20 +2005,98 @@ function advanceSeason() {
     P.role = "ดาวรุ่งชุดใหญ่"; P.wage = ROLE_WAGE[P.role]; P.coachTrust = 40; P.contractEnd = currentSeason + 1;
     alert(`📄 อายุเกินทีมเยาวชน! สัญญาอคาเดมี่สิ้นสุด คุณได้สัญญาอาชีพกับ ${P.club}`);
   }
-  if (P.age >= 40) { alert('🛑 อายุครบ 40 ปี ปิดฉากอาชีพค้าแข้ง!'); retireCareer(); }
+  if (P.age >= 40) { endCareerSequence(true, false); }
 }
 
 function retireCareer() {
+  if (P.retired || P.retirePlan) return;
+  gameModal('🏁 ประกาศรีไทร์\n\nคุณอยากปิดฉากอาชีพเมื่อไหร่?\n\n⚡ รีไทร์ตอนนี้ = แมตช์ถัดไปคือแมตช์สุดท้ายของคุณ\n📅 รีไทร์ตอนจบฤดูกาล = เล่นต่อจนนัดสุดท้ายของฤดูกาลนี้ (สัปดาห์ที่ 30)\n\nเลือกแล้วย้อนกลับไม่ได้', [
+    { label: '⚡ รีไทร์ตอนนี้', cls: 'btn-gold', cb: () => setRetirePlan('now') },
+    { label: '📅 รีไทร์ตอนจบฤดูกาล', cls: 'btn-blue', cb: () => setRetirePlan('season') },
+    { label: 'ยังไม่รีไทร์', cls: 'btn-blue' }]);
+}
+function setRetirePlan(plan) {
+  P.retirePlan = plan;
+  alert(plan === 'now' ? '🎗️ คุณประกาศแล้ว\nแมตช์ถัดไปคือแมตช์สุดท้ายของอาชีพคุณ' : '🎗️ คุณประกาศแล้ว\nคุณจะเลิกเล่นหลังนัดสุดท้ายของฤดูกาลนี้ (สัปดาห์ที่ 30)');
+  updateDashboardUI();
+}
+function cinematic(lines, label, done) {
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:#000;z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;text-align:center;color:#fff;overflow-y:auto;';
+  const box = document.createElement('div'); box.style.cssText = 'max-width:420px;width:100%;line-height:1.8;font-size:17px;';
+  const btn = document.createElement('button'); btn.className = 'btn-gold'; btn.textContent = label; btn.style.cssText = 'margin-top:26px;opacity:0;transition:opacity 1s;pointer-events:none;max-width:320px;width:100%;';
+  ov.append(box, btn); document.body.appendChild(ov);
+  let i = 0, tm = null, over = false;
+  const showBtn = () => { over = true; btn.style.opacity = 1; btn.style.pointerEvents = 'auto'; };
+  const next = () => {
+    clearTimeout(tm);
+    if (i >= lines.length) { showBtn(); return; }
+    const raw = lines[i++], big = raw.startsWith('*'), p = document.createElement('div');
+    p.textContent = big ? raw.slice(1) : raw;
+    p.style.cssText = 'opacity:0;transition:opacity 1.4s;margin:12px 0;' + (big ? 'font-size:23px;font-weight:700;color:#ffd23f;' : '');
+    box.appendChild(p); requestAnimationFrame(() => { p.style.opacity = 1; });
+    tm = setTimeout(next, 1500 + p.textContent.length * 40);
+  };
+  ov.onclick = e => { if (e.target === btn || over) return; next(); };
+  btn.onclick = () => { clearTimeout(tm); ov.style.transition = 'opacity .8s'; ov.style.opacity = 0; setTimeout(() => ov.remove(), 800); try { done && done(); } catch (e) {} };
+  next();
+}
+function careerFacts() {
+  const st = P.stats, seasons = currentSeason, startAge = P.age - (currentSeason - 1);
+  const awards = (P.awards || []).length, caps = P.nat ? P.nat.caps : 0, trophies = trophiesWon.length;
+  const score = st.goals + st.assists * 0.5 + trophies * 8 + awards * 10 + caps * 0.5 + seasons * 2;
+  return { seasons, startAge, apps: st.apps, goals: st.goals, assists: st.assists, awards, caps, trophies, score };
+}
+function farewellIntroLines() {
+  const f = careerFacts();
+  if (fwEmergency) return ['วันนี้...', 'ทุกคนมาที่สนามแห่งนี้ทำไม?', 'มาดูฟุตบอลงั้นหรือ?', 'ไม่ใช่เลย', 'ร่างกายอาจไม่ยอมให้คุณลงสนามในวันนี้', 'แต่ไม่มีใครมาเพื่อดูว่าคุณจะเตะได้กี่นาที',
+    `พวกเขามาเพื่อบอกลาเด็กที่เริ่มต้นจากอคาเดมี่ตอนอายุ ${f.startAge} ปี`, `${f.seasons} ฤดูกาล ${f.apps} นัด ${f.goals} ประตู`, '*นี่คือแมตช์สุดท้ายของอาชีพคุณ', 'นั่งดูเกมนี้ให้เต็มตา แล้วค่อยบอกลาให้สมกับที่ทุกคนรอ'];
+  return ['วันนี้...', 'ทุกคนมาที่สนามแห่งนี้ทำไม?', 'มาดูฟุตบอลงั้นหรือ?', 'ไม่ใช่เลย', 'พวกเขามาเพื่อเห็นใครคนหนึ่งลงสนามเป็นครั้งสุดท้าย',
+    `เด็กคนหนึ่งที่เริ่มต้นจากอคาเดมี่ตอนอายุ ${f.startAge} ปี`, `ผ่านมา ${f.seasons} ฤดูกาล ${f.apps} นัด ${f.goals} ประตู`, 'ทุกเสียงเชียร์ ทุกหยดเหงื่อ ทุกครั้งที่ล้มแล้วลุกขึ้นมาใหม่ ล้วนมาจบที่วันนี้',
+    '*นี่คือแมตช์สุดท้ายของอาชีพคุณ', 'ขอให้ทุกวินาทีในสนามเป็นของคุณ'];
+}
+
+function farewellTributeLines(afterMatch) {
+  const t = myTeam(), lead = penLeaders(t)[0], who = penName(lead, t), opp = currentOpponent ? currentOpponent.name : 'คู่แข่ง';
+  const L = afterMatch
+    ? ['*เสียงนกหวีดหมดเวลา', 'ไม่มีใครกลับบ้าน', 'ร่างกายไม่ยอมให้คุณลงสนามวันนี้ แต่ทุกคนไม่ได้มาดูคุณเตะ', 'นักเตะทั้งสองทีมเดินเข้ามาล้อมคุณกลางสนาม']
+    : ['*นาทีที่ 80', 'ป้ายเปลี่ยนตัวชูขึ้น... เป็นเบอร์ของคุณ', 'ทั้งสนามลุกขึ้นยืน ไม่มีใครนั่งเลยสักคน'];
+  if (P.role === 'กัปตันทีม') L.push('คุณปลดปลอกแขนกัปตันออกกลางสนาม', `แล้วสวมให้ ${who} ด้วยมือตัวเอง`, 'เพื่อนร่วมทีมเรียงแถวเป็นทางเดินปรบมือ แล้วเข้ามากอดคุณทีละคน');
+  else L.push(`${who} วิ่งเข้ามากอดคุณเป็นคนแรก แล้วเพื่อนร่วมทีมเรียงแถวเป็นทางเดินปรบมือส่ง`);
+  L.push(`นักเตะ ${opp} ที่เพิ่งแย่งบอลกับคุณ ยืนเรียงแถวปรบมือให้คุณเหมือนกัน`, `แฟนบอลร้องชื่อ "${P.name}" ดังไปทั่วสนาม ผืนผ้าและแฟลชบนอัฒจันทร์สว่างไปทั้งสนาม`, 'โค้ชกอดคุณแน่น พูดแค่ว่า "ขอบใจนะ"',
+    afterMatch ? 'คุณเดินรอบสนามช้า ๆ โบกมือให้ทุกอัฒจันทร์ เสียงดังกว่าทุกนัดที่เคยเล่นมา' : 'คุณเดินออกจากสนามช้า ๆ เหยียบหญ้าผืนนี้เป็นครั้งสุดท้าย แล้วหันไปโบกมือให้อัฒจันทร์');
+  return L;
+}
+
+function legacyTier(sc) {
+  if (sc >= 320) return { t: '🌟 1 ในล้าน', e: 'ในหนึ่งล้านคนที่ฝันอยากเป็นนักเตะ มีคนเดียวที่ทำได้ขนาดนี้ และคนนั้นคือคุณ ชื่อของคุณจะถูกเล่าต่อไปอีกหลายสิบปี' };
+  if (sc >= 200) return { t: '👑 ตำนานลูกหนังไทย', e: 'คนรุ่นหลังจะเปิดวิดีโอเก่า ๆ ดูว่าคุณเล่นยังไง แล้วบอกกันว่า "ยุคนั้นแหละ ยุคทอง"' };
+  if (sc >= 110) return { t: '⭐ ดาวเด่นแห่งยุค', e: 'คุณคือชื่อที่ทุกคนรู้จักในยุคของคุณ ไม่ว่าสนามไหนก็มีคนอยากถ่ายรูปด้วย' };
+  if (sc >= 50) return { t: '💪 ตัวหลักที่แฟน ๆ จดจำ', e: 'ไม่ใช่ทุกคนที่ได้ชื่อว่าเป็นกำลังสำคัญของทีมตลอดหลายปี และคุณทำได้' };
+  return { t: '⚽ นักเตะอาชีพที่ทำตามฝันสำเร็จ', e: 'เด็กที่เคยแค่เตะบอลกับเพื่อนในซอย ได้ลงสนามอาชีพจริง ๆ และนั่นคือชัยชนะที่ไม่มีใครเอาไปได้' };
+}
+function endCareerSequence(forced, afterCeremony) {
   if (P.retired) return;
   P.retired = true;
   try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
-  const tr = trophiesWon.length ? trophiesWon.map(t => `🏆 ${t.name} (ปีที่ ${t.year})`).join('\n') : 'ยังไม่เคยได้ถ้วยรางวัล';
-  gameModal(`🏁 ปิดฉากอาชีพค้าแข้งของ ${P.name}\n${P.pos} · อายุ ${P.age} ปี · สโมสรสุดท้าย ${P.club}\n\n📅 ค้าแข้ง ${currentSeason} ฤดูกาล\n⚽ ลงเล่น ${P.stats.apps} นัด · ${P.stats.goals} ประตู · ${P.stats.assists} แอสซิสต์\n💰 เงินสะสม ฿${P.bankBalance.toLocaleString()}\n🛍️ ของในร้าน ${ownedItems.length} ชิ้น\n\n${tr}`, [{ label: '🔄 เริ่มอาชีพใหม่', cls: 'btn-gold', cb: () => location.reload() }]);
+  const f = careerFacts(), tier = legacyTier(f.score), L = [];
+  if (forced) L.push(`อายุ ${P.age} ปี ร่างกายบอกชัดเจนว่าถึงเวลาแล้ว`);
+  if (!afterCeremony) L.push('เสียงนกหวีดยาวดังขึ้น', 'ไม่มีใครรีบกลับบ้าน');
+  L.push('ไฟสนามค่อย ๆ ดับลงทีละดวง', 'คุณนั่งอยู่ในห้องแต่งตัวคนเดียว ถอดสตั๊ดคู่สุดท้ายวางไว้บนพื้น',
+    `ถุงเท้ายังเปียกเหงื่อเหมือนทุกนัดตั้งแต่อายุ ${f.startAge}`, `${f.seasons} ฤดูกาลผ่านไปเร็วกว่าที่คิดไว้มาก`, `${f.apps} นัด · ${f.goals} ประตู · ${f.assists} แอสซิสต์`);
+  if (f.trophies || f.awards) L.push(`ถ้วยรางวัล ${f.trophies} ใบ และรางวัลส่วนตัว ${f.awards} รางวัล ยังวางอยู่บนชั้นเก็บ`);
+  if (f.caps) L.push(`และ ${f.caps} ครั้งที่ได้สวมเสื้อทีมชาติไทย`);
+  L.push(tier.e, '*' + tier.t, 'ขอบคุณที่เป็นส่วนหนึ่งของเกมลูกหนังนี้');
+  cinematic(L, '🎬 ดูสรุปอาชีพ', () => {
+    const tr = trophiesWon.length ? trophiesWon.map(t => `🏆 ${t.name} (ปีที่ ${t.year})`).join('\n') : 'ยังไม่เคยได้ถ้วยรางวัล';
+    gameModal(`🏁 ปิดฉากอาชีพของ ${P.name}\n${tier.t}\n\n${P.pos} · อายุ ${P.age} ปี · สโมสรสุดท้าย ${P.club}\n📅 ค้าแข้ง ${f.seasons} ฤดูกาล\n⚽ ${f.apps} นัด · ${f.goals} ประตู · ${f.assists} แอสซิสต์\n🇹🇭 ทีมชาติ ${f.caps} นัด\n🏅 รางวัลส่วนตัว ${f.awards} รางวัล\n💰 เงินสะสม ฿${P.bankBalance.toLocaleString()}\n\n${tr}`, [{ label: '🔄 เริ่มอาชีพใหม่', cls: 'btn-gold', cb: () => location.reload() }]);
+  });
 }
 
 function playRound(table, userInvolved) {
   const res = (a, b, ga, gb) => {
     if (gb === 0) gkOf(a).cs = (gkOf(a).cs || 0) + 1; if (ga === 0) gkOf(b).cs = (gkOf(b).cs || 0) + 1;
+    matchStamp++; tickM(a); tickM(b);
     a.p++; b.p++; a.gf = (a.gf || 0) + ga; a.ga = (a.ga || 0) + gb; b.gf = (b.gf || 0) + gb; b.ga = (b.ga || 0) + ga;
     if (ga > gb) { a.w++; a.pts += 3; b.l++; } else if (ga < gb) { b.w++; b.pts += 3; a.l++; } else { a.d++; b.d++; a.pts++; b.pts++; }
   };
