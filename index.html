@@ -623,7 +623,7 @@ let cupRoundText = "";
 
 let matchGoals = 0;
 let matchAssists = 0;
-let matchRating = 6.0;
+let matchRating = 6.0; let matchFails = 0;
 let matchMinutesPlayed = 0;
 
 const STAT_LABELS = {
@@ -1309,7 +1309,7 @@ function startLiveMatchCore() {
   matchRating = 6.0;
   matchMinutesPlayed = 0;
   isPlayerWarmingUp = false;
-  matchYellow = 0; matchRed = false; oppRed = false; matchSubbedOff = false;
+  matchYellow = 0; matchRed = false; oppRed = false; matchSubbedOff = false; matchFails = 0;
   const banned = !natMatch && (P.banWeeks || 0) > 0; matchBannedNow = banned; if (banned) { P.banWeeks--; if (!farewell) alert('⛔ คุณถูกแบน นัดนี้ลงเล่นไม่ได้'); }
   const benched = !natMatch && !farewell && !banned && !(P.injuredWeeks > 0) && (P.benchWeeks || 0) > 0; if (benched) { P.benchWeeks--; alert('🪑 โค้ชให้คุณนั่งสำรองนัดนี้ เพราะฟอร์มไม่ดี'); }
 
@@ -1438,6 +1438,7 @@ function penaltyShot(c) {
   let res = 'goal';
   if (Math.random() < miss) res = 'miss';
   else if (dive === c.side || (c.chip && dive === 'C')) { if (Math.random() < (c.chip ? 0.85 : c.h === 'H' ? 0.18 : c.side === 'C' ? 0.9 : 0.5)) res = 'save'; }
+  if (res !== 'goal') matchFails++;
   if (res === 'goal') {
     homeScore++; matchGoals++; matchRating = Math.min(10, matchRating + 1.2); P.coachTrust = Math.min(100, P.coachTrust + 3); setScoreText();
     addMatchLog(tm, `⚽ GOAL! ${meLabel()} (${myName()}) ยิงจุดโทษเข้า${c.where}!`, 'highlight');
@@ -1716,6 +1717,7 @@ function makeChoice(i) {
   if (P.adaptWeeks > 0) p -= 0.05;
   { const calm = ((P.attrs.composure || 50) - 60) * 0.003; if (c.r === 'R') p += calm; if (currentMinute >= 70 && Math.abs(homeScore - awayScore) <= 1) p += calm; }
   if (currentMinute >= 70) { if (homeScore < awayScore && c.r === 'R') p += 0.08; else if (homeScore > awayScore && c.r === 'S') p += 0.08; }
+  if (c.ok === 'GOAL' && P.pos === 'CM') p *= 2;
   if (c.ok === 'GOAL' && c.r !== 'E' && ['ST', 'LW', 'RW'].includes(P.pos)) p *= (P.pos === 'ST' ? 1.12 : 0.82);
   p = Math.max(0.08, Math.min(0.92, p));
   const t = `${currentMinute}'`;
@@ -1735,6 +1737,7 @@ function makeChoice(i) {
     }
   } else {
     card.classList.add('flash-red'); setTimeout(() => card.classList.remove('flash-red'), 800);
+    matchFails++;
     const sev = c.r === 'S' || c.r === 'E' ? 1 : c.r === 'N' ? 2 : 3;
     matchRating = Math.max(4, matchRating - (sev === 1 ? 0.3 : sev === 2 ? 0.5 : 0.8)); P.coachTrust = Math.max(0, P.coachTrust - sev);
     addMatchLog(t, `❌ FAILED! ${c.t} ... พลาด`, 'alert');
@@ -1757,7 +1760,10 @@ function addMatchLog(min, msg, type = 'log') {
 function showMatchSummary() {
   if (natMatch) { natSummary(); return; }
   if (matchMinutesPlayed > 0) {
-    if (homeScore > awayScore) matchRating = Math.min(10, matchRating + 0.5); else if (homeScore < awayScore) matchRating = Math.max(4, matchRating - 0.3);
+    if (homeScore > awayScore) matchRating = Math.min(10, matchRating + 0.5); else if (homeScore < awayScore) matchRating = Math.max(4, matchRating - 0.3); else matchRating = Math.min(10, matchRating + 0.2);
+    matchRating = Math.min(10, matchRating + Math.min(0.3, matchMinutesPlayed / 300));
+    if (matchFails === 0 && matchYellow === 0 && !matchRed && matchMinutesPlayed >= 45) { matchRating = Math.min(10, matchRating + 0.4); addMatchLog("90'", '✅ เล่นได้นิ่ง ไม่มีพลาดสักจังหวะ', 'highlight'); }
+    if (awayScore === 0 && P.pos === 'CM') matchRating = Math.min(10, matchRating + 0.4);
     if (awayScore === 0 && P.pos === 'GK' && !isCupMatch) P.season.cs = (P.season.cs || 0) + 1;
     if (awayScore === 0 && ['GK','CB','LB','RB','CDM'].includes(P.pos)) { matchRating = Math.min(10, matchRating + 0.6); P.coachTrust = Math.min(100, P.coachTrust + 2); addMatchLog("90'", '🧤 รักษาคลีนชีตได้!', 'highlight'); }
   }
@@ -2530,6 +2536,21 @@ runCeremony = function (defs, ctx, done) {
   const names = defs.filter(d => d.myV > 0 && d.myRank < 3).map(d => d.title).join(' · ');
   offDialog((set, close) => offInterviewUI(set, close, 'awards', { awards: names, name: P.name }), () => _offCeremony(defs, ctx, done));
 };
+
+/* ===== CM เบอร์ 8 (บ็อกซ์ทูบ็อกซ์): ช่วยรับ เชื่อมเกม ซ้อนขึ้นไปจบ ===== */
+(function () {
+  const G = (t, r, st) => C(t, r, st || 'sh', 'GOAL'), A = (t, r) => C(t, r, 'pa', 'ASSIST'), P = (t, r, st, f) => C(t, r, st || 'pa', 'PLAY', f);
+  SCEN.cm = [
+    SC('cm1','ลูกที่สองหน้าเขตโทษ!','บอลเด้งออกมาหน้าเขตโทษตรงเท้าคุณ กองหลังยังกลับมาประกบไม่ทัน ผู้รักษาประตูยืนกลางประตู',[G('ยิงไกลเข้ามุมไกล','R'),G('แตะเข้าเสาไกลด้วยข้างเท้าใน','N'),A('ทดให้ตัวรุกที่ว่างข้างหน้า','N'),G('พาบอลเข้าไปอีกจังหวะก่อนยิง','R','pc'),P('เล่นสั้นให้เพื่อนแล้ววิ่งซ้อนขึ้นไป','S')]),
+    SC('cm2','ถูกกดดันกลางสนามสามคน!','คุณรับบอลกลางสนาม คู่แข่งสามคนบีบเข้ามาพร้อมกัน ตัวรับของทีมอยู่ข้างหลังคุณ',[P('หมุนตัวหนีแล้วพาบอลออกจากวง','N','pc'),P('ใช้ตัวกันแล้วเก็บบอลไว้','N','df'),P('ทดกลับให้ตัวรับ','S'),P('เปลี่ยนเกมไปอีกฝั่งที่ว่าง','N'),A('ส่งทะลุผ่านแรงกดดันให้กองหน้า','R')]),
+    SC('cm3','คู่แข่งสวนกลับ คุณเป็นด่านแรก!','คู่แข่งตีเกมสวนกลับ เหลือคุณกับกองหลังสองคนที่ยังตั้งตัวไม่ทัน',[P('ยืนบล็อกช่องส่งก่อน','S','df'),P('เข้าสกัดบอลตรง ๆ','N','df','CONCEDE'),P('ฟาวล์ยุทธวิธีหยุดเกม','S','df'),P('ถอยลงมาปิดช่องหน้ากองหลัง','S','df'),C('ตัดบอลแล้วสวนกลับทันที','R','pc','ASSIST','CONCEDE')]),
+    SC('cm4','วิ่งซ้อนขึ้นไปในกรอบ!','ทีมบุกอยู่ริมเส้น คุณวิ่งตามเข้าไปหลังกองหน้า ไม่มีใครมาจับคุณ',[G('วิ่งสวนเสาไกลแล้วยิง','N'),G('ถ่วงจังหวะแล้วยิงลูกที่สอง','N'),G('โหม่งครอสเข้ามุมไกล','R'),A('ทดให้เพื่อนที่ว่างกว่า','S'),P('วิ่งหลอกให้กองหน้าได้ที่ว่าง','N','pc')]),
+    SC('cm5','ลูกตั้งเตะของทีมเรา!','ทีมได้ลูกตั้งเตะ คุณยืนอยู่หลังกรอบเขตโทษ เพื่อนส่วนใหญ่ขึ้นไปรอในกรอบ',[G('ขึ้นไปโหม่งกลางกรอบ','R'),G('ยืนรอลูกสองแล้วยิงไกล','N'),P('ถอยอยู่ตั้งหลักกันสวนกลับ','S','df'),A('ซ้อนเสาไกลรอเพื่อนทดบอล','N'),P('ดันตัวกันกองหลังให้เพื่อนโหม่ง','N','df')]),
+    SC('cm6','ทีมต้องการเกมสร้างจากหลัง','ทีมครองบอลอยู่ แนวรับคู่แข่งยืนสูงกดดัน มีช่องว่างหลังแนวให้ทะลุ',[P('จ่ายสั้นต่อเนื่อง','S'),A('ส่งยาวทะลุแนวให้ปีก','N'),P('ลากบอลขึ้นหน้าเองข้ามเส้นกลาง','R','pc','CONCEDE'),P('ทดกลับให้กองหลังตั้งหลัก','S'),A('สอดทะลุกลางให้กองหน้า','R')]),
+    SC('cm7','แย่งบอลกลางสนาม!','บอลกระดอนอยู่กลางวง คุณกับกองกลางคู่แข่งวิ่งเข้าหาบอลพร้อมกัน',[P('เข้าแย่งตรง ๆ ด้วยไหล่','N','df','CONCEDE'),P('ดักเส้นทางส่งแล้วตัดบอล','N','pc'),P('เบียดจนเสียบอล แล้วถอยตั้งหลัก','S','df'),C('แย่งแล้วเปิดสวนกลับเลย','R','pa','ASSIST','CONCEDE'),P('ฟาวล์หยุดเกมไว้','S','df')]),
+    SC('cm8','ได้ที่ว่างหน้ากรอบเขตโทษ!','แนวรับคู่แข่งถอยลึกหน้ากรอบเขตโทษ ไม่มีใครออกมากดดันคุณ',[G('ยิงไกลมุมไกล','R'),A('แทงทะลุช่องให้กองหน้า','N'),A('เปิดครอสลอยเข้ากลางกรอบ','N'),P('เล่นสั้นรอจังหวะ','S'),P('พาบอลเข้าไปใกล้ขึ้นก่อนตัดสินใจ','N','pc')])
+  ];
+})();
 </script>
 
 </body>
