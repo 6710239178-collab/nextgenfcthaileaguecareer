@@ -1284,6 +1284,13 @@ function checkMatchReady() {
   }
 }
 
+let matchChanceStart = false;
+function chanceStart(banned, benched) {
+  if (natMatch || P.role !== 'ดาวรุ่งชุดใหญ่' || P.injuredWeeks > 0 || banned || benched || P.age > 23 || ovrOf() < 58) return false;
+  const f = P.form || [], fa = f.length >= 2 ? f.reduce((a, b) => a + b, 0) / f.length : 6.5;
+  const pr = Math.max(0, Math.min(0.7, 0.08 + (ovrOf() - 60) * 0.02 + (fa >= 7 ? 0.2 : fa >= 6.6 ? 0.08 : 0) + (isCupMatch ? 0.25 : 0)));
+  return Math.random() < pr;
+}
 function startLiveMatch() {
   if (!natMatch && !hasTrainedThisWeek && !hasRestedThisWeek) return;
   farewell = !natMatch && (P.retirePlan === 'now' || (P.retirePlan === 'season' && currentWeek === 30));
@@ -1312,6 +1319,7 @@ function startLiveMatchCore() {
   matchYellow = 0; matchRed = false; oppRed = false; matchSubbedOff = false; matchFails = 0;
   const banned = !natMatch && (P.banWeeks || 0) > 0; matchBannedNow = banned; if (banned) { P.banWeeks--; if (!farewell) alert('⛔ คุณถูกแบน นัดนี้ลงเล่นไม่ได้'); }
   const benched = !natMatch && !farewell && !banned && !(P.injuredWeeks > 0) && (P.benchWeeks || 0) > 0; if (benched) { P.benchWeeks--; alert('🪑 โค้ชให้คุณนั่งสำรองนัดนี้ เพราะฟอร์มไม่ดี'); }
+  const chance = chanceStart(banned, benched); matchChanceStart = chance;
 
   document.getElementById('scoreText').textContent = "0 - 0";
   document.getElementById('minuteText').textContent = "0'";
@@ -1319,7 +1327,7 @@ function startLiveMatchCore() {
 
   if (natMatch) {
     isPlayerOnField = natMatch.starter;
-  } else if ((farewell && !fwEmergency) || (!(P.injuredWeeks > 0) && !banned && !benched && (P.role === "ตัวจริง" || P.role === "กัปตันทีม" || P.role === "ตัวจริงเยาวชน"))) {
+  } else if ((farewell && !fwEmergency) || chance || (!(P.injuredWeeks > 0) && !banned && !benched && (P.role === "ตัวจริง" || P.role === "กัปตันทีม" || P.role === "ตัวจริงเยาวชน"))) {
     isPlayerOnField = true;
   } else {
     isPlayerOnField = false;
@@ -1331,6 +1339,7 @@ function startLiveMatchCore() {
 
   if (isPlayerOnField) {
     addMatchLog(`0'`, `⚽ คุณลงสนามเป็น 11 ตัวจริงให้ ${myName()}!`, 'sub');
+    if (matchChanceStart) addMatchLog(`0'`, '🌱 โค้ชเปิดโอกาสให้ดาวรุ่งอย่างคุณออกสตาร์ทนัดนี้', 'sub');
     if (!natMatch) { P.stats.apps++; P.season.apps++; }
   } else {
     addMatchLog(`0'`, P.injuredWeeks > 0 ? '🩹 คุณบาดเจ็บ ลงเล่นไม่ได้นัดนี้ (ต้องพักรักษาตัว)' : banned ? '⛔ คุณถูกแบน นั่งดูข้างสนามนัดนี้' : benched ? '🪑 โค้ชให้คุณนั่งสำรองนัดนี้ เพราะฟอร์มไม่ดี' : '🪑 คุณมีชื่อเป็นตัวสำรอง นั่งรอโอกาสข้างสนาม', 'log');
@@ -1366,7 +1375,7 @@ function runMatchLoop() {
     }
   }
 
-  if (!isPlayerOnField && !isPlayerWarmingUp && !matchSubbedOff && !matchRed && !(P.injuredWeeks > 0) && !matchBannedNow && currentMinute >= 50 && Math.random() < 0.15) {
+  if (!isPlayerOnField && !isPlayerWarmingUp && !matchSubbedOff && !matchRed && !(P.injuredWeeks > 0) && !matchBannedNow && currentMinute >= 50 && Math.random() < (P.role === 'ดาวรุ่งชุดใหญ่' ? 0.25 : 0.15)) {
     isPlayerWarmingUp = true;
     addMatchLog(`${currentMinute}'`, `🔥 โค้ชสั่งให้คุณลุกไปวอร์มร่างกายข้างสนาม!`, 'sub');
   }
@@ -1775,6 +1784,7 @@ function showMatchSummary() {
     if (awayScore === 0 && ['GK','CB','LB','RB','CDM'].includes(P.pos)) { matchRating = Math.min(10, matchRating + 0.6); P.coachTrust = Math.min(100, P.coachTrust + 2); addMatchLog("90'", '🧤 รักษาคลีนชีตได้!', 'highlight'); }
   }
   if (matchMinutesPlayed > 0) P.coachTrust = Math.min(100, P.coachTrust + (matchRating >= 8.6 ? 3 : matchRating >= 7.9 ? 2 : matchRating >= 7.1 ? 1 : 0));
+  if (matchChanceStart && matchMinutesPlayed > 0) P.coachTrust = Math.min(100, P.coachTrust + (matchRating >= 7.4 ? 4 : matchRating >= 6.8 ? 2 : 0));
   if (matchMinutesPlayed > 0) { P.season.rSum = (P.season.rSum || 0) + matchRating; P.season.rN = (P.season.rN || 0) + 1; P.stats.rSum = (P.stats.rSum || 0) + matchRating; P.stats.rN = (P.stats.rN || 0) + 1; P.form = P.form || []; P.form.push(+matchRating.toFixed(1)); if (P.form.length > 5) P.form.shift(); }
   P.stats.goals += matchGoals; P.stats.assists += matchAssists;
   P.season.goals += matchGoals; P.season.assists += matchAssists;
