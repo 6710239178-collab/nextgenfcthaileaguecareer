@@ -1440,7 +1440,7 @@ function penaltyShot(c) {
   else if (dive === c.side || (c.chip && dive === 'C')) { if (Math.random() < (c.chip ? 0.85 : c.h === 'H' ? 0.18 : c.side === 'C' ? 0.9 : 0.5)) res = 'save'; }
   if (res !== 'goal') matchFails++;
   if (res === 'goal') {
-    homeScore++; matchGoals++; matchRating = Math.min(10, matchRating + 1.2); P.coachTrust = Math.min(100, P.coachTrust + 3); setScoreText();
+    homeScore++; matchGoals++; matchRating = Math.min(10, matchRating + 1.2); P.coachTrust = Math.min(100, P.coachTrust + 2); setScoreText();
     addMatchLog(tm, `⚽ GOAL! ${meLabel()} (${myName()}) ยิงจุดโทษเข้า${c.where}!`, 'highlight');
   } else if (res === 'save') {
     matchRating = Math.max(4, matchRating - 0.6); P.coachTrust = Math.max(0, P.coachTrust - 2);
@@ -1715,6 +1715,7 @@ function makeChoice(i) {
   let p = 0.34 + (sv - opp) * 0.01 + (c.r === 'E' ? 0.4 : c.r === 'S' ? 0.25 : c.r === 'R' ? -0.15 : 0);
   if (P.fitness < 30) p -= 0.15;
   if (P.adaptWeeks > 0) p -= 0.05;
+  if (c.ok === 'PLAY' && c.r === 'S') p += 0.1;
   { const calm = ((P.attrs.composure || 50) - 60) * 0.003; if (c.r === 'R') p += calm; if (currentMinute >= 70 && Math.abs(homeScore - awayScore) <= 1) p += calm; }
   if (currentMinute >= 70) { if (homeScore < awayScore && c.r === 'R') p += 0.08; else if (homeScore > awayScore && c.r === 'S') p += 0.08; }
   if (c.ok === 'GOAL' && P.pos === 'CM') p *= 2;
@@ -1725,23 +1726,29 @@ function makeChoice(i) {
   if (Math.random() < p) {
     card.classList.add('flash-gold'); setTimeout(() => card.classList.remove('flash-gold'), 800);
     if (c.ok === 'GOAL') {
-      homeScore++; matchGoals++; matchRating = Math.min(10, matchRating + 1.2); P.coachTrust = Math.min(100, P.coachTrust + 3); score();
+      homeScore++; matchGoals++; matchRating = Math.min(10, matchRating + 1.2); P.coachTrust = Math.min(100, P.coachTrust + 2); score();
       const gk = goalKind(c.t), gs = styleOf(); gs.g++; if (gk) { gs[gk]++; P.season[gk] = (P.season[gk] || 0) + 1; }
       addMatchLog(t, `⚽ GOAL! ${meLabel()} (${myName()}) ยิงประตู${gk === 'head' ? ' ด้วยการโหม่ง' : gk === 'long' ? ' จากระยะไกล' : ''}!${Math.random() < 0.5 ? ' แอสซิสต์: ' + pickScorer(myTeam(), 'a') : ''}`, 'highlight');
     } else if (c.ok === 'ASSIST') {
       homeScore++; matchAssists++; matchRating = Math.min(10, matchRating + 1.0); P.coachTrust = Math.min(100, P.coachTrust + 2); score();
       addMatchLog(t, `⚽ GOAL! ${pickScorer(myTeam(), 'g')} (${myName()}) ยิงประตู! แอสซิสต์: ${meLabel()}`, 'highlight');
     } else {
-      matchRating = Math.min(10, matchRating + (c.r === 'S' ? 0.3 : c.r === 'N' ? 0.6 : 0.9)); P.coachTrust = Math.min(100, P.coachTrust + 2);
+      matchRating = Math.min(10, matchRating + (c.r === 'S' ? 0.4 : c.r === 'N' ? 0.6 : 0.9)); P.coachTrust = Math.min(100, P.coachTrust + 2);
       addMatchLog(t, `✅ ${c.r === 'S' ? 'ปลอดภัย' : 'สำเร็จ'}! ${c.t}`, 'highlight');
     }
   } else {
     card.classList.add('flash-red'); setTimeout(() => card.classList.remove('flash-red'), 800);
-    matchFails++;
-    const sev = c.r === 'S' || c.r === 'E' ? 1 : c.r === 'N' ? 2 : 3;
-    matchRating = Math.max(4, matchRating - (sev === 1 ? 0.3 : sev === 2 ? 0.5 : 0.8)); P.coachTrust = Math.max(0, P.coachTrust - sev);
-    addMatchLog(t, `❌ FAILED! ${c.t} ... พลาด`, 'alert');
-    if (c.f === 'CONCEDE' && Math.random() < 0.5) {
+    const conc = c.f === 'CONCEDE' && Math.random() < 0.5, real = c.ok === 'PLAY' || conc;
+    if (real) {
+      matchFails++;
+      const sev = c.r === 'S' || c.r === 'E' ? 1 : c.r === 'N' ? 2 : 3;
+      matchRating = Math.max(4, matchRating - (sev === 1 ? 0.2 : sev === 2 ? 0.35 : 0.6)); P.coachTrust = Math.max(0, P.coachTrust - sev);
+      addMatchLog(t, `❌ พลาด! ${c.t} ...`, 'alert');
+    } else {
+      matchRating = Math.max(4, matchRating - (c.r === 'R' ? 0 : c.r === 'N' ? 0.15 : 0.3)); P.coachTrust = Math.max(0, P.coachTrust - (c.r === 'R' ? 0 : 1));
+      addMatchLog(t, `🔸 ลองแล้วไม่สำเร็จ: ${c.t}`, 'log');
+    }
+    if (conc) {
       awayScore++; score();
       addMatchLog(t, `🚨 GOAL! ${pickScorer(currentOpponent, 'g')} (${currentOpponent.name}) ทำประตูจากความผิดพลาดของเรา`, 'alert');
     }
@@ -1767,7 +1774,7 @@ function showMatchSummary() {
     if (awayScore === 0 && P.pos === 'GK' && !isCupMatch) P.season.cs = (P.season.cs || 0) + 1;
     if (awayScore === 0 && ['GK','CB','LB','RB','CDM'].includes(P.pos)) { matchRating = Math.min(10, matchRating + 0.6); P.coachTrust = Math.min(100, P.coachTrust + 2); addMatchLog("90'", '🧤 รักษาคลีนชีตได้!', 'highlight'); }
   }
-  if (matchMinutesPlayed > 0) P.coachTrust = Math.min(100, P.coachTrust + (matchRating >= 8 ? 3 : matchRating >= 7 ? 2 : matchRating >= 6 ? 1 : 0));
+  if (matchMinutesPlayed > 0) P.coachTrust = Math.min(100, P.coachTrust + (matchRating >= 8.6 ? 3 : matchRating >= 7.9 ? 2 : matchRating >= 7.1 ? 1 : 0));
   if (matchMinutesPlayed > 0) { P.season.rSum = (P.season.rSum || 0) + matchRating; P.season.rN = (P.season.rN || 0) + 1; P.stats.rSum = (P.stats.rSum || 0) + matchRating; P.stats.rN = (P.stats.rN || 0) + 1; P.form = P.form || []; P.form.push(+matchRating.toFixed(1)); if (P.form.length > 5) P.form.shift(); }
   P.stats.goals += matchGoals; P.stats.assists += matchAssists;
   P.season.goals += matchGoals; P.season.assists += matchAssists;
@@ -1811,7 +1818,7 @@ function finishMatchDay() {
     alert(`🩹 บาดเจ็บ! ต้องพักรักษาตัว ${P.injuredWeeks} สัปดาห์ (ซ้อมไม่ได้ และไม่ได้ลงสนาม)`);
   }
   const o = ovrOf(), t = P.coachTrust;
-  if (["ตัวจริง", "กัปตันทีม", "ตัวจริงเยาวชน"].includes(P.role) && !(P.benchWeeks > 0) && (P.form || []).length >= 4 && P.form.slice(-4).reduce((a, b) => a + b, 0) / 4 < 5.8) {
+  if (["ตัวจริง", "กัปตันทีม", "ตัวจริงเยาวชน"].includes(P.role) && !(P.benchWeeks > 0) && (P.form || []).length >= 4 && P.form.slice(-4).reduce((a, b) => a + b, 0) / 4 < 6.1) {
     P.benchWeeks = 2; P.coachTrust = Math.max(0, P.coachTrust - 4); P.form = [];
     alert('🪑 ฟอร์มตกหลายนัดติด! โค้ชให้คุณนั่งสำรอง 2 นัด ต้องกลับมาพิสูจน์ตัวเอง');
   }
