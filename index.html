@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NEXTGEN FC - THAI LEAGUE CAREER</title>
+<title>NEXTGEN FC 2.0</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -137,76 +137,84 @@ body { background: var(--bg-dark); color: var(--text-main); min-height: 100vh; o
 
 .hidden { display: none !important; }
 
-/* ===== MOBILE-GAME SKIN (Play Store style) ===== */
-:root{--bg-dark:#1c8a3f;--bg-card:#1a3a82;--bg-card-border:#3466d6;--accent-gold:#ffd23f;--accent-blue:#4cc3ff;--accent-red:#ff4d6d;--accent-green:#5df07a;--text-muted:#c4d6ff;}
-body{background:repeating-linear-gradient(90deg,#2aa24e 0 70px,#32b058 70px 140px);}
-body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellipse at 50% 30%,transparent 40%,rgba(0,40,10,.45));pointer-events:none;z-index:0}
+/* ===== NEXTGEN FC 2.0 — PRO STATS SKIN ===== */
+:root{--bg-dark:#0d1117;--bg-card:#161b22;--bg-card-border:#262d38;--accent-gold:#2ee6a6;--accent-blue:#5aa9ff;--accent-red:#ff5c6c;--accent-green:#2ee6a6;--text-main:#e8edf3;--text-muted:#8b95a5;--surface2:#1b222c;--mint-soft:rgba(46,230,166,.12)}
+body{background:#0d1117;color:var(--text-main)}
+@keyframes flashGoldAnim{0%{background:var(--bg-card)}50%{background:rgba(46,230,166,.14);border-color:var(--accent-gold)}100%{background:var(--bg-card)}}
 .app-container{flex-direction:column;position:relative;z-index:1}
 .main-content{order:1;background:transparent;min-height:0}
-.sidebar{order:2;width:100%;flex-direction:row;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));background:linear-gradient(#1b2f6e,#102250);border-right:0;border-top:4px solid var(--accent-gold);box-shadow:0 -4px 14px rgba(0,0,0,.35)}
+.sidebar{order:2;width:100%;flex-direction:row;padding:4px 6px calc(4px + env(safe-area-inset-bottom,0px));background:#10151c;border-right:0;border-top:1px solid var(--bg-card-border)}
 .brand-title{display:none}
-.nav-menu{flex-direction:row;gap:4px;overflow-x:auto;overflow-y:hidden;justify-content:space-around}
-.nav-item{flex:1;min-width:58px;flex-direction:column;justify-content:center;gap:2px;padding:6px 2px;border-radius:14px;border-left:0;background:transparent;text-align:center;font-size:11px;line-height:1.1;color:#b9cdfa}
-.nav-item .ni{font-size:24px;line-height:1;transition:transform .15s}
-.nav-item.active{background:linear-gradient(#ffe27a,#ffb800);color:#5a3200;box-shadow:0 3px 0 #b87400}
-.nav-item.active .ni{transform:translateY(-3px) scale(1.2)}
-.badge-notify{position:absolute;top:0;right:6px}
-.top-bar{height:auto;padding:10px 14px;background:linear-gradient(#2f7bff,#1747b8);border-bottom:4px solid var(--accent-gold);box-shadow:0 4px 0 rgba(0,0,0,.25);gap:10px;flex-wrap:wrap}
-.top-bar>div:last-child{gap:10px!important;flex-wrap:wrap}
-.ovr-box{border-radius:50% 50% 50% 50%/40% 40% 60% 60%;background:linear-gradient(#ffe27a,#ff9f1a);border:3px solid #fff;box-shadow:0 3px 0 #a85d00;color:#5a2d00;width:54px;height:58px}
+.nav-menu{flex-direction:row;gap:2px;overflow:hidden;justify-content:space-around}
+.nav-item{flex:1;min-width:0;flex-direction:column;justify-content:center;gap:3px;padding:8px 2px;border-radius:10px;border-left:0;background:transparent;text-align:center;font-size:11px;line-height:1.1;color:var(--text-muted)}
+.nav-item:hover{background:transparent;color:var(--text-main)}
+.nav-item .ni{display:flex;width:22px;height:22px}
+.nav-item .ni svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nav-item.active{background:var(--mint-soft);color:var(--accent-gold);font-weight:600}
+.badge-notify{position:absolute;top:-5px;right:6px}
+.top-bar{height:auto;padding:10px 14px;background:#10151c;border-bottom:1px solid var(--bg-card-border);gap:10px;flex-wrap:wrap}
+.top-bar>div:last-child{gap:12px!important;flex-wrap:wrap}
+.ovr-box{border-radius:12px;background:var(--accent-gold);color:#06241a;width:48px;height:48px;font-size:24px}
 .view-container{padding:14px 14px 20px}
-.card{background:linear-gradient(#244ca8,#1a3a82);border:3px solid var(--accent-gold);border-radius:20px;box-shadow:0 6px 0 #0c1f55,0 10px 18px rgba(0,0,0,.3)}
-.card-header{border-bottom:2px dashed rgba(255,255,255,.25)}
-.card-title{font-weight:700;text-shadow:0 2px 0 rgba(0,0,0,.35)}
-.btn-gold,.btn-blue,.btn-red{border-radius:16px;font-weight:700;font-size:16px;padding:13px 18px;border:0;border-bottom:6px solid;text-shadow:0 1px 0 rgba(255,255,255,.35);transition:transform .08s,border-bottom-width .08s}
-.btn-gold{background:linear-gradient(#ffe45e,#ffae00);color:#5a2d00;border-color:#b86e00}
-.btn-blue{background:linear-gradient(#6fd3ff,#1e8cf0);color:#fff;border-color:#0f5bb0;text-shadow:0 2px 0 rgba(0,0,0,.3)}
-.btn-red{background:linear-gradient(#ff7b94,#e8294f);border-color:#a3112f;text-shadow:0 2px 0 rgba(0,0,0,.3)}
-.btn-gold:hover:not(:disabled),.btn-blue:hover:not(:disabled){transform:none;filter:brightness(1.08)}
-.btn-gold:active:not(:disabled),.btn-blue:active:not(:disabled),.btn-red:active{transform:translateY(4px);border-bottom-width:2px}
-.btn-gold:disabled,.btn-blue:disabled{background:linear-gradient(#9aa7c7,#7a88aa);color:#e6ebf7;border:0;border-bottom:6px solid #566287;text-shadow:none}
-.btn-step{width:34px;height:34px;border-radius:50%;background:linear-gradient(#6fd3ff,#1e8cf0);border-bottom:3px solid #0f5bb0;font-size:18px}
-.choice-btn{background:linear-gradient(#fff,#dbe8ff);color:#17306b;font-weight:600;border:0;border-bottom:5px solid #8aa7e6;border-radius:14px;padding:14px 16px}
-.choice-btn:hover{background:linear-gradient(#fff6c9,#ffe27a);border-color:#d99a00}
-.choice-btn:active{transform:translateY(3px);border-bottom-width:2px}
-.form-input,.form-select{background:#fff;color:#17306b;border:3px solid #8aa7e6;border-radius:12px;font-weight:600;padding:11px 12px}
-[style*="#070a12"],[style*="#090e18"]{background:rgba(10,25,70,.55)!important;border-radius:14px}
-.match-log-box,.chat-box{background:rgba(8,20,60,.6);border:2px solid #3466d6;border-radius:14px}
-.log-item,.chat-msg{background:rgba(255,255,255,.1)}
-.live-scoreboard{background:linear-gradient(#10286a,#0a1a4a);border:3px solid var(--accent-gold);border-radius:20px}
-.score-display{text-shadow:0 3px 0 #a15c00;font-size:48px}
-.team-badge-circle{background:linear-gradient(#fff,#cfe0ff);color:#17306b;border:3px solid var(--accent-gold);width:52px;height:52px}
-.match-progress-bg{height:12px;border-radius:8px;background:rgba(0,0,0,.35)}
-.match-progress-fill{border-radius:8px}
-.decision-box{background:rgba(10,25,70,.9);border:3px solid var(--accent-gold);border-radius:18px}
-.rating-modal{background:linear-gradient(#244ca8,#1a3a82);border:3px solid var(--accent-gold);border-radius:20px}
-.rating-num{text-shadow:0 3px 0 #a15c00}
-.player-card-preview{background:linear-gradient(160deg,#ffe27a,#f0a500 45%,#c77b00);border:4px solid #fff;border-radius:22px;box-shadow:0 6px 0 #8a5200;color:#4a2600}
-.player-card-preview *{color:#4a2600!important}
-.player-card-preview div[style*="rgba(255,255,255,0.03)"]{background:rgba(255,255,255,.35)!important}
-.stat-adjuster{background:rgba(10,25,70,.55);border-radius:12px;border:0}
-.store-item,.trophy-card{background:rgba(10,25,70,.55);border:3px solid #3466d6;border-radius:16px}
-.store-item.owned{border-color:var(--accent-green)}
-.trophy-card{border-color:var(--accent-gold)}
-.league-table th{color:var(--accent-gold)}
-.league-table tr.my-team{background:rgba(255,210,63,.22)}
-.transfer-status-badge{border-radius:20px;font-weight:700}
+.seg{display:flex;gap:6px;margin-bottom:12px}
+.seg-btn{flex:1;position:relative;text-align:center;padding:9px 6px;border-radius:8px;background:var(--bg-card);border:1px solid var(--bg-card-border);color:var(--text-muted);font-size:13px;font-weight:500;cursor:pointer}
+.seg-btn.active{border-color:var(--accent-gold);color:var(--accent-gold);background:var(--mint-soft)}
+.card{background:var(--bg-card);border:1px solid var(--bg-card-border);border-radius:12px;box-shadow:none}
+.card-header{border-bottom:1px solid var(--bg-card-border)}
+.card-title{font-weight:600;font-size:15px}
+.btn-gold,.btn-blue,.btn-red{border-radius:10px;font-weight:600;font-size:15px;padding:12px 16px;border:1px solid transparent;text-shadow:none;transition:filter .12s,transform .08s}
+.btn-gold{background:var(--accent-gold);color:#06241a}
+.btn-blue{background:var(--surface2);color:var(--text-main);border-color:#2f3947}
+.btn-red{background:rgba(255,92,108,.12);color:#ff8794;border-color:rgba(255,92,108,.4)}
+.btn-gold:hover:not(:disabled),.btn-blue:hover:not(:disabled){transform:none;filter:brightness(1.1)}
+.btn-blue:hover:not(:disabled){background:#222b37}
+.btn-gold:active:not(:disabled),.btn-blue:active:not(:disabled),.btn-red:active{transform:scale(.985)}
+.btn-gold:disabled,.btn-blue:disabled{background:#1b222c;color:#566070;border:1px solid #262d38}
+.btn-step{width:32px;height:32px;border-radius:8px;background:#222a36;color:var(--text-main);font-size:17px}
+.choice-btn{background:var(--surface2);color:var(--text-main);font-weight:500;border:1px solid #2a3340;border-radius:10px;padding:13px 14px}
+.choice-btn:hover{background:#222b37;border-color:var(--accent-gold)}
+.choice-btn:active{transform:scale(.99)}
+.form-input,.form-select{background:#0d1117;color:var(--text-main);border:1px solid var(--bg-card-border);border-radius:8px;font-weight:500;padding:10px 12px}
+.form-input:focus{border-color:var(--accent-gold)}
+[style*="#070a12"],[style*="#090e18"]{background:#0d1117!important;border-radius:10px}
+.match-log-box,.chat-box{background:#0d1117;border:1px solid var(--bg-card-border);border-radius:10px}
+.log-item,.chat-msg{background:rgba(255,255,255,.035)}
+.log-item.highlight{background:rgba(46,230,166,.08)}
+.log-item.sub{color:#8fc4ff;background:rgba(90,169,255,.08)}
+.live-scoreboard{background:#10151c;border:1px solid var(--bg-card-border);border-radius:12px}
+.live-badge{color:var(--accent-red)}
+.score-display{color:#fff;text-shadow:none;font-size:46px}
+.team-badge-circle{background:var(--surface2);color:var(--text-main);border:1px solid #2f3947;width:52px;height:52px}
+.match-progress-bg{height:6px;border-radius:4px;background:#1b222c;border:0}
+.match-progress-fill{border-radius:4px;background:var(--accent-gold)}
+.decision-box{background:#10151c;border:1px solid var(--bg-card-border);border-radius:14px}
+.rating-modal{background:var(--bg-card);border:1px solid var(--bg-card-border);border-radius:12px}
+.rating-num{color:var(--accent-gold);text-shadow:none}
+.player-card-preview{background:var(--bg-card);border:1px solid var(--bg-card-border);border-radius:14px}
+.player-card-preview div[style*="rgba(255,255,255,0.03)"]{background:rgba(255,255,255,.04)!important}
+.stat-adjuster{background:#0d1117;border-radius:8px;border:1px solid var(--bg-card-border)}
+.store-item,.trophy-card{background:#12171f;border:1px solid var(--bg-card-border);border-radius:12px}
+.store-item.owned{border-color:var(--accent-gold)}
+.trophy-card{border-color:rgba(46,230,166,.35)}
+.league-table th{color:var(--text-muted);font-weight:500}
+.league-table tr.my-team{background:var(--mint-soft);color:var(--accent-gold)}
+.league-table tr.z-top td:first-child{box-shadow:inset 3px 0 0 var(--accent-gold)}
+.league-table tr.z-down td:first-child{box-shadow:inset 3px 0 0 var(--accent-red)}
+.league-table tr.z-up td:first-child{box-shadow:inset 3px 0 0 var(--accent-blue)}
+.transfer-status-badge{border-radius:8px;font-weight:600}
 #creatorScreen{position:relative;z-index:1;overflow-y:auto;height:100vh}
-#creatorScreen h1{color:#fff!important;font-size:34px!important;text-shadow:0 4px 0 #0c1f55,0 0 18px rgba(0,0,0,.4);-webkit-text-stroke:1px #0c1f55;letter-spacing:.5px}
-#creatorScreen>p{color:#fff!important;text-shadow:0 2px 0 rgba(0,0,0,.4)}
-.fixed-footer-cr{bottom:76px;background:rgba(10,25,70,.7);color:#c4d6ff}
-@media(max-width:700px){.creator-grid{grid-template-columns:1fr}.fixed-footer-cr{display:none}.nav-item{min-width:50px;font-size:10px}.score-display{font-size:38px}}
-.gm-overlay{position:fixed;inset:0;background:rgba(0,10,40,.72);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
-.gm-card{width:100%;max-width:380px;background:linear-gradient(#2a56b8,#17306b);border:4px solid var(--accent-gold);border-radius:24px;padding:22px 18px 18px;box-shadow:0 8px 0 #0c1f55,0 14px 30px rgba(0,0,0,.5);text-align:center;animation:gmPop .22s ease-out;max-height:85vh;overflow-y:auto}
-.gm-text{white-space:pre-line;font-size:16px;line-height:1.5;margin-bottom:16px;color:#fff}
+#creatorScreen h1{color:var(--text-main)!important;font-size:28px!important;letter-spacing:0;text-shadow:none}
+#creatorScreen>p{color:var(--text-muted)!important}
+.fixed-footer-cr{bottom:64px;background:rgba(16,21,28,.8);color:var(--text-muted)}
+@media(max-width:700px){.creator-grid{grid-template-columns:1fr}.fixed-footer-cr{display:none}.score-display{font-size:38px}}
+.gm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
+.gm-card{width:100%;max-width:380px;background:#161b22;border:1px solid #2f3947;border-radius:16px;padding:20px 18px 18px;box-shadow:0 12px 40px rgba(0,0,0,.5);text-align:center;animation:gmPop .18s ease-out;max-height:85vh;overflow-y:auto}
+.gm-text{white-space:pre-line;font-size:15px;line-height:1.55;margin-bottom:16px;color:var(--text-main)}
 .gm-btns{display:flex;flex-direction:column;gap:10px}
-@keyframes gmPop{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes gmPop{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
 #homeName,#awayName{max-width:112px;text-align:center;margin:6px auto 0;line-height:1.25;font-size:12px!important;word-break:keep-all;overflow-wrap:anywhere}
 #homeBadge,#awayBadge{margin:0 auto}
-.nav-menu{overflow-x:hidden!important;gap:2px!important}
-.nav-item{min-width:0!important;padding:6px 1px!important;font-size:10px!important}
-.nav-item .ni{font-size:22px!important}
-#decisionBox{position:fixed!important;left:0;right:0;bottom:0;margin:0 auto;max-width:560px;max-height:64vh;overflow-y:auto;z-index:80;border-radius:24px 24px 0 0!important;border-bottom:0!important;padding:16px 14px calc(14px + env(safe-area-inset-bottom,0px))!important;box-shadow:0 -10px 34px rgba(0,0,0,.55);animation:sheetUp .25s ease-out}
+#decisionBox{position:fixed!important;left:0;right:0;bottom:0;margin:0 auto;max-width:560px;max-height:64vh;overflow-y:auto;z-index:80;border-radius:16px 16px 0 0!important;border-bottom:0!important;padding:16px 14px calc(14px + env(safe-area-inset-bottom,0px))!important;box-shadow:0 -10px 34px rgba(0,0,0,.55);animation:sheetUp .22s ease-out}
 #decisionBox .choice-btn{margin-bottom:8px;font-size:15px}
 @keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -276,162 +284,292 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
 .team-badge-circle .lg-img{padding:3px;box-sizing:border-box}
 .team-badge-circle.logo-only{background:none!important;border:0!important;box-shadow:none!important;width:68px!important;height:68px!important;overflow:visible}
 .team-badge-circle.logo-only .lg-img{padding:0;filter:drop-shadow(0 3px 5px rgba(0,0,0,.45))}
+
+/* ===== PRO SKIN overrides ===== */
+.dd-btn{background:var(--bg-card);color:var(--text-main);border:1px solid var(--bg-card-border);border-radius:10px;font-weight:600}
+.dd-btn svg polyline{stroke:#8b95a5}
+.dd-menu{background:var(--bg-card);border:1px solid #2f3947;border-radius:10px;box-shadow:0 10px 24px rgba(0,0,0,.45)}
+.dd-item{color:var(--text-main);border-bottom:1px solid var(--bg-card-border);font-weight:500}
+.dd-item.sel{background:var(--mint-soft);color:var(--accent-gold);font-weight:600}
+.ac-overlay{background:#0d1117}
+.ac-card{background:var(--bg-card);border:1px solid #2f3947;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.5);color:var(--text-main)}
+.ac-card.win-me{animation:none;border-color:var(--accent-gold)}
+.ac-crown{filter:none;font-size:44px}
+.ac-title{color:var(--text-main);font-weight:700}
+.ac-sub,.ac-nom,.ac-club{color:var(--text-muted)}
+.ac-award{color:var(--accent-gold);font-weight:700}
+.ac-text{color:#c9d1db}
+.ac-spin{background:#0d1117;border:1px solid var(--bg-card-border);color:var(--text-main);font-size:22px}
+.ac-spin.done{color:var(--accent-gold);border-color:var(--accent-gold);transform:none;text-shadow:none}
+.ac-win{color:var(--accent-gold);text-shadow:none}
+.ac-btn{background:var(--accent-gold);color:#06241a;border-radius:10px;box-shadow:none;font-weight:700}
+.ac-btn.ac-ghost{background:transparent;color:var(--text-muted);border:1px solid #2f3947}
+.ac-conf{display:none}
+.off-post{background:var(--surface2);border:1px solid #2f3947;border-radius:10px}
+.off-quote{background:rgba(255,255,255,.04);border-left:3px solid var(--accent-red);border-radius:8px}
+
+/* ===== NEXTGEN FC 2.0 — NEW LAYOUT ===== */
+:root{--bg-card:#121820;--bg-card-border:#202a36;--s2:#19212b;--text-muted:#8591a3}
+html{background:#05080b}
+body{background:#0a0e13;max-width:520px;margin:0 auto;box-shadow:0 0 0 1px #141b24}
+input,textarea{user-select:text;-webkit-user-select:text}
+.app-container{width:100%;max-width:520px;margin:0 auto}
+.view-container{padding:14px 14px 108px}
+.muted-p{font-size:13px;color:var(--text-muted);line-height:1.5}
+.appbar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 10px;background:#0a0e13;flex-shrink:0}
+.brandmini{display:flex;align-items:center;gap:8px;font:700 15px var(--font-title);letter-spacing:.3px}
+.brandmini i{font-style:normal;color:var(--accent-gold);font-size:12px}
+.logo-mark{width:28px;height:28px;border-radius:9px;background:var(--accent-gold);color:#04231a;display:grid;place-items:center;font:800 15px var(--font-title)}
+.pills{display:flex;gap:8px}
+.pill{background:var(--s2);border-radius:999px;padding:6px 12px;font-size:12px;color:var(--text-muted);white-space:nowrap}
+.pill b{color:var(--text-main);font-weight:600}
+.season-line{height:3px;background:#161d27;flex-shrink:0}
+.season-line i{display:block;height:100%;width:0;background:var(--accent-gold);transition:width .4s}
+/* floating bottom nav */
+.sidebar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom,0px));width:calc(100% - 24px);max-width:496px;padding:6px;background:rgba(20,27,36,.94);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid var(--bg-card-border);border-radius:24px;z-index:60;box-shadow:0 12px 32px rgba(0,0,0,.55)}
+.nav-menu{gap:4px}
+.nav-item{flex-direction:row;justify-content:center;gap:7px;padding:11px 4px;border-radius:18px;font-size:13px;color:var(--text-muted);background:transparent;transition:flex .25s,background .2s}
+.nav-item span:last-child{display:none}
+.nav-item.active{flex:2.4;background:var(--accent-gold);color:#04231a;font-weight:700}
+.nav-item.active span:last-child{display:inline}
+/* cards */
+.card{background:var(--bg-card);border:0;border-radius:20px;padding:18px;margin-bottom:14px}
+.card-header{border:0;margin-bottom:12px;padding-bottom:0}
+.card-title{font-size:13px;color:var(--text-muted);font-weight:600;letter-spacing:.2px}
+.btn-gold,.btn-blue,.btn-red{border-radius:14px;padding:14px 16px;font-size:15px}
+.lbl{display:block;font-size:12px;color:var(--text-muted);margin:14px 0 8px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{background:var(--s2);color:var(--text-muted);border-radius:999px;padding:4px 10px;font-size:12px;font-weight:600}
+.chip.mint{background:var(--mint-soft);color:var(--accent-gold)}
+.bar{height:8px;border-radius:6px;background:#222c38;overflow:hidden;position:relative}
+.bar i{display:block;height:100%;background:var(--accent-gold);border-radius:6px;transition:width .35s}
+.bar i.low{background:var(--accent-red)}
+.ring{--p:50;width:96px;height:96px;border-radius:50%;background:conic-gradient(var(--accent-gold) calc(var(--p) * 1%),#222c38 0);display:grid;place-items:center;flex-shrink:0}
+.ring-in{width:80px;height:80px;border-radius:50%;background:#0e151c;display:grid;place-items:center;font:700 34px var(--font-title);color:#fff}
+.ring.sm{width:78px;height:78px}.ring.sm .ring-in{width:64px;height:64px;font-size:27px}
+/* creator */
+#creatorScreen{height:100vh;overflow-y:auto;position:relative;z-index:1}
+.cr{padding:22px 16px 48px}
+.cr h1{font-size:27px!important;text-align:left;margin:18px 0 2px;color:var(--text-main)!important;font-family:var(--font-title)}
+.cr-sub{color:var(--text-muted);font-size:14px;margin-bottom:18px}
+.idcard{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;background:linear-gradient(135deg,#15222a,#10181f);border:1px solid var(--bg-card-border);border-radius:22px;padding:16px}
+.idname{font:700 19px var(--font-title);margin-bottom:6px}
+.idclub{font-size:12px;color:var(--text-muted);margin-top:8px}
+.ms-grid{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ms{background:rgba(255,255,255,.04);border-radius:12px;padding:8px 4px;text-align:center}
+.ms span{display:block;font-size:10.5px;color:var(--text-muted)}
+.ms b{font:700 17px var(--font-title)}
+.steps{display:flex;gap:8px;margin:16px 0 4px}
+.step{flex:1;text-align:center;padding:9px 0;border-radius:12px;background:var(--s2);color:var(--text-muted);font-size:13px;font-weight:600}
+.step.on{background:var(--mint-soft);color:var(--accent-gold)}
+.pos-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.pos-chip{background:var(--s2);border:1px solid transparent;border-radius:14px;padding:10px 2px;color:var(--text-main);cursor:pointer;text-align:center;font-family:inherit}
+.pos-chip b{display:block;font:700 15px var(--font-title)}
+.pos-chip small{font-size:9.5px;color:var(--text-muted)}
+.pos-chip.on,.age-chip.on{border-color:var(--accent-gold);background:var(--mint-soft);color:var(--accent-gold)}
+.pos-chip.on small{color:var(--accent-gold)}
+.age-seg{display:flex;gap:8px}
+.age-chip{flex:1;background:var(--s2);border:1px solid transparent;border-radius:14px;padding:12px 0;color:var(--text-main);font:600 14px var(--font-main);cursor:pointer}
+.ptspill{display:inline-block;background:var(--mint-soft);color:var(--accent-gold);border-radius:999px;padding:7px 16px;font-size:13px;font-weight:600;margin:16px 0 12px}
+.ptspill b{font:700 17px var(--font-title);margin-left:4px}
+.adj{background:var(--bg-card);border-radius:16px;padding:12px 14px;margin-bottom:8px}
+.adj-top{display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px}
+.adj-top b{font:700 16px var(--font-title);color:var(--accent-gold)}
+.adj-row{display:flex;align-items:center;gap:12px}.adj-row .bar{flex:1}
+/* home */
+.hero{display:flex;gap:16px;align-items:center;background:linear-gradient(135deg,#15222a,#0f171e);border:1px solid var(--bg-card-border);border-radius:24px;padding:18px;margin-bottom:12px}
+.hero-info{min-width:0}
+.hero-name{font:700 21px var(--font-title);line-height:1.2}
+.hero-sub{font-size:12px;color:var(--text-muted);margin:4px 0 8px}
+.meters{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
+.meter{background:var(--bg-card);border-radius:16px;padding:12px 14px}
+.meter-top{display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:8px}
+.meter-top b{color:var(--text-main);font-weight:600}
+.goalline{font-size:12px;color:var(--accent-gold);margin:0 2px 14px;white-space:pre-line}
+.vs{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;text-align:center}
+.vt{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:13px;font-weight:600;min-width:0}
+.lgbox{width:46px;height:46px;display:grid;place-items:center;font:700 13px var(--font-title);background:var(--s2);border-radius:50%}
+.lgbox .lg-img{width:100%;height:100%;padding:0}
+.vsx{font:700 12px var(--font-title);color:var(--text-muted);line-height:1.5}
+.nextmeta{text-align:center;font-size:12px;color:var(--text-muted);margin-top:12px}
+.bento{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.tile{background:var(--s2);border-radius:14px;padding:12px 4px;text-align:center}
+.tile b{display:block;font:700 21px var(--font-title)}.tile small{font-size:11px;color:var(--text-muted)}
+.formrow{display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:8px}
+.fchips{display:flex;gap:6px}
+.fchip{min-width:34px;text-align:center;padding:4px 6px;border-radius:8px;font:700 12px var(--font-title)}
+.fchip.g{background:rgba(46,230,166,.16);color:#2ee6a6}.fchip.y{background:rgba(245,197,66,.16);color:#f5c542}.fchip.r{background:rgba(255,92,108,.16);color:#ff5c6c}
+.fin{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fin>div{background:var(--s2);border-radius:14px;padding:12px}
+.fin small{display:block;font-size:11px;color:var(--text-muted);margin-bottom:4px}
+.fin b{font:700 16px var(--font-title)}
+/* training */
+.radar-wrap{display:flex;justify-content:center;margin-bottom:6px}.radar{width:100%;max-width:250px}
+.alist{display:grid;gap:10px}
+.arow{display:grid;grid-template-columns:1fr auto;gap:4px 8px;font-size:13px}.arow b{font:700 15px var(--font-title);color:var(--accent-gold)}.arow .bar{grid-column:1/-1}
+/* match center */
+.mc{text-align:center;padding:10px 4px}
+.mc-comp{display:inline-block;background:var(--s2);color:var(--text-muted);font-size:12px;font-weight:600;border-radius:999px;padding:5px 14px}
+.mc-teams{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px;margin:22px 0 14px}
+.mc-team{display:flex;flex-direction:column;align-items:center;gap:10px;font-size:13px;font-weight:600;min-width:0;line-height:1.3}
+.mc .team-badge-circle{width:84px!important;height:84px!important;font-size:20px;margin:0}
+.mc-vs{font:700 18px var(--font-title);color:var(--text-muted)}
+.mc-title{font-size:13px;color:var(--text-muted);margin-bottom:14px}
+.mc-note{color:var(--accent-red);font-size:13px;margin-bottom:16px}
+.mc .btn-gold{max-width:340px;margin:0 auto;display:block}
+.live-scoreboard{background:var(--bg-card);border:0;border-radius:20px}
+.log-item{border-left:0;border-radius:12px;padding:10px 12px}
+.log-item.highlight{background:rgba(46,230,166,.1)}.log-item.alert{background:rgba(255,92,108,.1)}
+.fixed-footer-cr{display:none!important}
+.credit{text-align:center;font-size:10px;letter-spacing:.5px;color:#5b6676;margin:18px 0 4px}.credit span{color:var(--accent-gold);font-weight:600}
 </style>
 </head>
 <body>
 
 <!-- CREATOR SCREEN -->
-<div id="creatorScreen" style="padding: 40px 20px;">
-  <div id="continueBox" class="hidden" style="max-width:520px; margin:0 auto 20px; text-align:center;">
-    <div class="card" style="padding:16px;">
-      <div id="continueInfo" style="margin-bottom:12px; font-weight:700;"></div>
-      <button class="btn-gold" onclick="loadGame()">▶️ เล่นต่อ</button>
-      <button class="btn-red" style="margin-top:8px;" onclick="deleteSave()">🗑️ ลบเซฟและเริ่มใหม่</button>
-    </div>
-  </div>
-  <h1 style="font-family:var(--font-title); font-size:32px; text-align:center; color:var(--accent-gold); margin-bottom:4px;">สร้างนักเตะเยาวชนของคุณ</h1>
-  <p style="text-align:center; color:var(--text-muted); font-size:14px; margin-bottom:30px;">เริ่มต้นการเดินทางในสโมสรอคาเดมี่เพื่อไต่เต้าสู่ไทยลีก 1</p>
-
-  <div class="creator-grid">
-    <div class="player-card-preview">
-      <div style="font-family:var(--font-title); font-size:16px; color:var(--text-muted);" id="prevPos">ST</div>
-      <div style="font-family:var(--font-title); font-size:56px; color:var(--accent-gold); font-weight:700;" id="prevOvr">50</div>
-      <div style="font-size:20px; font-weight:600; color:#fff;" id="prevName">สมชาย ใจเด็ด</div>
-      <div style="font-size:13px; color:var(--accent-blue); margin-bottom:6px;" id="prevAge">อายุ: 16 ปี</div>
-      <div style="font-size:13px; color:var(--text-muted); margin-bottom:20px;" id="prevClub">สุ่มสโมสรอคาเดมี่เมื่อเริ่มเกม</div>
-
-      <div style="display:flex; flex-direction:column; gap:6px; font-size:13px;">
-        <div style="display:flex; justify-content:space-between; padding:6px 10px; background:rgba(255,255,255,0.03); border-radius:4px;"><span>ความเร็ว (Pace)</span><b id="pvPace">50</b></div>
-        <div style="display:flex; justify-content:space-between; padding:6px 10px; background:rgba(255,255,255,0.03); border-radius:4px;"><span>การยิง (Shooting)</span><b id="pvShooting">50</b></div>
-        <div style="display:flex; justify-content:space-between; padding:6px 10px; background:rgba(255,255,255,0.03); border-radius:4px;"><span>การจ่าย (Passing)</span><b id="pvPassing">50</b></div>
-        <div style="display:flex; justify-content:space-between; padding:6px 10px; background:rgba(255,255,255,0.03); border-radius:4px;"><span>เกมรับ (Defending)</span><b id="pvDefending">50</b></div>
-        <div style="display:flex; justify-content:space-between; padding:6px 10px; background:rgba(255,255,255,0.03); border-radius:4px;"><span>ความนิ่ง (Composure)</span><b id="pvComposure">50</b></div>
-        <div style="display:flex; justify-content:space-between; padding:6px 10px; background:rgba(255,255,255,0.03); border-radius:4px;"><span>ร่างกาย (Physical)</span><b id="pvPhysical">50</b></div>
+<div id="creatorScreen">
+  <div class="cr">
+    <div id="continueBox" class="hidden">
+      <div class="card" style="text-align:center;">
+        <div id="continueInfo" style="margin-bottom:12px; font-weight:700;"></div>
+        <button class="btn-gold" onclick="loadGame()">▶️ เล่นต่อ</button>
+        <button class="btn-red" style="margin-top:8px;" onclick="deleteSave()">🗑️ ลบเซฟและเริ่มใหม่</button>
       </div>
     </div>
+    <div class="brandmini"><span class="logo-mark">N</span>NEXTGEN FC <i>2.0</i></div>
+    <h1>สร้างนักเตะของคุณ</h1>
+    <p class="cr-sub">จากเด็กอคาเดมี่ สู่ไทยลีก 1</p>
 
-    <div class="card" style="margin-bottom:0;">
-      <h3 style="margin-bottom:16px; font-family:var(--font-title);">ข้อมูลส่วนตัว</h3>
-      <div style="margin-bottom:14px;">
-        <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">ชื่อ-นามสกุล</label>
-        <input type="text" id="inName" class="form-input" value="สมชาย ใจเด็ด" oninput="updatePreview()">
+    <div class="idcard">
+      <div class="ring sm" id="prevRing"><div class="ring-in" id="prevOvr">50</div></div>
+      <div class="idinfo">
+        <div class="idname" id="prevName">สมชาย ใจเด็ด</div>
+        <div class="chips"><span class="chip mint" id="prevPos">ST</span><span class="chip" id="prevAge">อายุ: 16 ปี</span></div>
+        <div class="idclub" id="prevClub">สุ่มสโมสรอคาเดมี่เมื่อเริ่มเกม</div>
       </div>
-
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;">
-        <div>
-          <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">ตำแหน่ง</label>
-          <select id="inPos" class="form-select" onchange="onPosChange()"><option value="ST">ST - กองหน้า</option><option value="LW">LW - ปีกซ้าย</option><option value="RW">RW - ปีกขวา</option><option value="CAM">CAM - กองกลางตัวรุก</option><option value="CM">CM - กองกลาง</option><option value="CDM">CDM - กองกลางตัวรับ</option><option value="LB">LB - แบ็กซ้าย</option><option value="RB">RB - แบ็กขวา</option><option value="CB">CB - กองหลังตัวกลาง</option><option value="GK">GK - ผู้รักษาประตู</option></select>
-        </div>
-        <div>
-          <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">อายุเริ่มต้น</label>
-          <select id="inAge" class="form-select" onchange="updatePreview()">
-            <option value="16">16 ปี</option>
-            <option value="17">17 ปี</option>
-            <option value="18">18 ปี</option>
-          </select>
-        </div>
-      </div>
-
-      <div style="padding:14px; background:#070a12; border-radius:8px; border:1px solid var(--bg-card-border); margin-top:16px;">
-        <div style="display:flex; justify-content:space-between; margin-bottom:10px; align-items:center;">
-          <span style="font-size:13px; color:#fff; font-weight:500;">⚡ อัปเกรดค่าพลังเริ่มต้น</span>
-          <span style="font-size:13px;">แต้มคงเหลือ: <b id="initPoints" style="color:var(--accent-red)">15</b></span>
-        </div>
-        <div id="statAdjusters"></div>
-      </div>
-
-      <button class="btn-gold" id="btnStartCareer" style="margin-top:20px;" disabled onclick="initCareer()">
-        🔒 กรุณาใช้อัปแต้มทักษะให้หมดก่อนเริ่มเกม
-      </button>
+      <div class="ms-grid"><div class="ms"><span>Pace</span><b id="pvPace">50</b></div><div class="ms"><span>Shooting</span><b id="pvShooting">50</b></div><div class="ms"><span>Passing</span><b id="pvPassing">50</b></div><div class="ms"><span>Defending</span><b id="pvDefending">50</b></div><div class="ms"><span>Composure</span><b id="pvComposure">50</b></div><div class="ms"><span>Physical</span><b id="pvPhysical">50</b></div></div>
     </div>
+
+    <div class="steps"><div class="step on" id="stepDot1">1 · ตัวตน</div><div class="step" id="stepDot2">2 · ค่าพลัง</div></div>
+
+    <div id="step1">
+      <label class="lbl">ชื่อ-นามสกุล</label>
+      <input type="text" id="inName" class="form-input" value="สมชาย ใจเด็ด" oninput="updatePreview()">
+      <label class="lbl">ตำแหน่ง</label>
+      <div class="pos-grid"><button type="button" class="pos-chip" data-p="ST" onclick="pickPos('ST')"><b>ST</b><small>กองหน้า</small></button><button type="button" class="pos-chip" data-p="LW" onclick="pickPos('LW')"><b>LW</b><small>ปีกซ้าย</small></button><button type="button" class="pos-chip" data-p="RW" onclick="pickPos('RW')"><b>RW</b><small>ปีกขวา</small></button><button type="button" class="pos-chip" data-p="CAM" onclick="pickPos('CAM')"><b>CAM</b><small>ตัวรุก</small></button><button type="button" class="pos-chip" data-p="CM" onclick="pickPos('CM')"><b>CM</b><small>กลาง</small></button><button type="button" class="pos-chip" data-p="CDM" onclick="pickPos('CDM')"><b>CDM</b><small>ตัวรับ</small></button><button type="button" class="pos-chip" data-p="LB" onclick="pickPos('LB')"><b>LB</b><small>แบ็กซ้าย</small></button><button type="button" class="pos-chip" data-p="RB" onclick="pickPos('RB')"><b>RB</b><small>แบ็กขวา</small></button><button type="button" class="pos-chip" data-p="CB" onclick="pickPos('CB')"><b>CB</b><small>กองหลัง</small></button><button type="button" class="pos-chip" data-p="GK" onclick="pickPos('GK')"><b>GK</b><small>ประตู</small></button></div>
+      <select id="inPos" class="hidden" onchange="onPosChange()"><option value="ST">ST</option><option value="LW">LW</option><option value="RW">RW</option><option value="CAM">CAM</option><option value="CM">CM</option><option value="CDM">CDM</option><option value="LB">LB</option><option value="RB">RB</option><option value="CB">CB</option><option value="GK">GK</option></select>
+      <label class="lbl">อายุเริ่มต้น</label>
+      <div class="age-seg">
+        <button type="button" class="age-chip" data-a="16" onclick="pickAge(16)">16 ปี</button>
+        <button type="button" class="age-chip" data-a="17" onclick="pickAge(17)">17 ปี</button>
+        <button type="button" class="age-chip" data-a="18" onclick="pickAge(18)">18 ปี</button>
+      </div>
+      <select id="inAge" class="hidden"><option value="16">16</option><option value="17">17</option><option value="18">18</option></select>
+      <button class="btn-gold" style="margin-top:22px;" onclick="goStep(2)">ถัดไป: แบ่งค่าพลัง →</button>
+    </div>
+
+    <div id="step2" class="hidden">
+      <div class="ptspill">แต้มที่เหลือให้แจก <b id="initPoints">22</b></div>
+      <div id="statAdjusters"></div>
+      <button class="btn-gold" id="btnStartCareer" style="margin-top:16px;" disabled onclick="initCareer()">🔒 กรุณาแจกแต้มให้หมด</button>
+      <button class="btn-blue" style="margin-top:8px;" onclick="goStep(1)">← กลับไปแก้ตัวตน</button>
+    </div>
+    <div class="credit">DEVELOPED BY <span>EARTH SIRAWICH</span></div>
   </div>
 </div>
 
 <!-- MAIN DASHBOARD -->
 <div id="gameDashboard" class="app-container hidden">
   <div class="sidebar">
-    <div class="brand-title">THAI LEAGUE <span>CAREER</span></div>
+    <div class="brand-title">NEXTGEN <span>FC 2.0</span></div>
     <div class="nav-menu">
-      <div class="nav-item active" onclick="switchTab('home', this)"><span class="ni">🏠</span><span>หน้าหลัก</span></div>
-      <div class="nav-item hidden" id="navAgent" onclick="switchTab('agent', this)">
-        <span class="ni">💼</span><span>เอเย่นต์</span>
-        <span id="agentNotify" class="badge-notify hidden">!</span>
-      </div>
-      <div class="nav-item" onclick="switchTab('attrs', this)"><span class="ni">🏋️</span><span>ฝึกซ้อม</span></div>
-      <div class="nav-item" onclick="switchTab('match', this)"><span class="ni">⚽</span><span>แข่งขัน</span></div>
-      <div class="nav-item" onclick="switchTab('lifestyle', this)"><span class="ni">🏎️</span><span>ไลฟ์สไตล์</span></div>
-      <div class="nav-item" onclick="switchTab('trophies', this)"><span class="ni">🏆</span><span>ผลงาน</span></div>
-      <div class="nav-item" onclick="switchTab('table', this)"><span class="ni">📊</span><span>ตาราง</span></div>
+      <div class="nav-item active" data-tab="home" onclick="switchTab('home')"><span class="ni"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/></svg></span><span>หน้าหลัก</span></div>
+      <div class="nav-item" data-tab="attrs" onclick="switchTab('attrs')"><span class="ni"><svg viewBox="0 0 24 24"><path d="M6.5 8v8M17.5 8v8M3.5 10v4M20.5 10v4M6.5 12h11"/></svg></span><span>ฝึกซ้อม</span></div>
+      <div class="nav-item" data-tab="match" onclick="switchTab('match')"><span class="ni"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m12 8 3.4 2.5-1.3 4h-4.2l-1.3-4z"/></svg></span><span>แข่งขัน</span></div>
+      <div class="nav-item" data-tab="table" onclick="switchTab('table')"><span class="ni"><svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V5M19 20v-6"/></svg></span><span>ตาราง</span></div>
+      <div class="nav-item" data-tab="profile" onclick="switchTab('profile')"><span class="ni"><svg viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></svg></span><span>โปรไฟล์</span></div>
     </div>
   </div>
 
   <div class="main-content">
-    <div class="top-bar">
-      <div style="display:flex; align-items:center; gap:16px;">
-        <div class="ovr-box" id="hudOvr">50</div>
-        <div>
-          <div style="font-size:17px; font-weight:600;" id="hudName">NAME</div>
-          <div style="font-size:12px; color:var(--text-muted);" id="hudSub">ST · อคาเดมี่</div>
-        </div>
-      </div>
-      <div style="display:flex; gap:20px;">
-        <div style="text-align:right;"><div style="font-size:11px; color:var(--text-muted);">อายุ</div><div style="font-size:13px; font-weight:600;" id="hudAge">16 ปี</div></div>
-        <div style="text-align:right;"><div style="font-size:11px; color:var(--text-muted);">สถานะทีม</div><div style="font-size:13px; font-weight:600; color:var(--accent-gold);" id="hudRole">สำรองอคาเดมี่</div></div>
-        <div style="text-align:right;"><div style="font-size:11px; color:var(--text-muted);">ฤดูกาล/สัปดาห์</div><div style="font-size:13px; font-weight:600;" id="hudWeek">ปี 1 (1/30)</div></div>
-        <div style="text-align:right;"><div style="font-size:11px; color:var(--text-muted);">ความฟิต</div><div style="font-size:13px; font-weight:600;" id="hudFitness">100%</div></div>
+    <div class="appbar">
+      <div class="brandmini"><span class="logo-mark">N</span>NEXTGEN FC <i>2.0</i></div>
+      <div class="pills">
+        <span class="pill">ฟิต <b id="hudFitness">100%</b></span>
+        <span class="pill"><b id="hudWeek">ปี 1 (1/30)</b></span>
       </div>
     </div>
+    <div class="season-line"><i id="seasonFill"></i></div>
 
     <div class="view-container">
+      <div class="seg hidden" id="profileSeg">
+        <div class="seg-btn" data-sub="trophies" onclick="switchTab('trophies')">ผลงาน</div>
+        <div class="seg-btn" data-sub="lifestyle" onclick="switchTab('lifestyle')">ไลฟ์สไตล์</div>
+        <div class="seg-btn hidden" id="navAgent" data-sub="agent" onclick="switchTab('agent')">เอเย่นต์<span id="agentNotify" class="badge-notify hidden">!</span></div>
+      </div>
       <!-- HOME TAB -->
       <div id="tab-home" class="view-panel active">
-        <div class="card hidden" id="emergencyRestCard" style="border-color: var(--accent-red);">
-          <div class="card-header"><div class="card-title" style="color:var(--accent-red);">🚨 แจ้งเตือน: นักเตะหมดแรงเต็มที (ความฟิต 0%)</div></div>
-          <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">คุณไม่สามารถลงซ้อมหรือลงแข่งได้แล้ว กรุณากดพักผ่อนฉุกเฉินเพื่อฟื้นฟูร่างกาย</p>
+        <div class="card hidden" id="emergencyRestCard" style="box-shadow:inset 0 0 0 1px var(--accent-red);">
+          <div class="card-header"><div class="card-title" style="color:var(--accent-red);">🚨 หมดแรง (ความฟิต 0%)</div></div>
+          <p class="muted-p">ซ้อมหรือลงแข่งไม่ได้แล้ว กดพักผ่อนฉุกเฉินเพื่อฟื้นฟูร่างกาย</p>
           <button class="btn-red" onclick="emergencyRest()">🛌 พักผ่อนฉุกเฉิน (+40% ความฟิต)</button>
         </div>
 
-        <div class="card" style="border-color: var(--accent-gold);">
-          <div class="card-header"><div class="card-title">💼 บริการเอเย่นต์ส่วนตัว (Agent)</div></div>
-          
+        <div class="hero">
+          <div class="ring" id="heroRing"><div class="ring-in" id="hudOvr">50</div></div>
+          <div class="hero-info">
+            <div class="hero-name" id="hudName">NAME</div>
+            <div class="hero-sub" id="hudSub">ST · อคาเดมี่</div>
+            <div class="chips"><span class="chip mint" id="hudRole">สำรองอคาเดมี่</span><span class="chip" id="hudAge">16 ปี</span></div>
+          </div>
+        </div>
+
+        <div class="meters">
+          <div class="meter"><div class="meter-top"><span>ความฟิต</span><b id="meterFitVal">100%</b></div><div class="bar"><i id="meterFit"></i></div></div>
+          <div class="meter"><div class="meter-top"><span>ความไว้ใจโค้ช</span><b id="coachTrustText">15 / 100</b></div><div class="bar"><i id="meterTrust"></i></div></div>
+        </div>
+        <div class="goalline" id="nextGoalText"></div>
+
+        <div class="card" id="homeNext">
+          <div class="card-header"><div class="card-title">นัดถัดไป</div></div>
+          <div id="homeNextBody"></div>
+          <button class="btn-gold" style="margin-top:14px;" onclick="switchTab('match')">ไปหน้าแข่งขัน →</button>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title">ฤดูกาลนี้</div></div>
+          <div class="bento">
+            <div class="tile"><b id="hApps">0</b><small>นัด</small></div>
+            <div class="tile"><b id="hGoals">0</b><small>ประตู</small></div>
+            <div class="tile"><b id="hAssists">0</b><small>แอสซิสต์</small></div>
+            <div class="tile"><b id="hAvg">-</b><small>เรตติ้งเฉลี่ย</small></div>
+          </div>
+          <div class="formrow"><span class="muted-p">ฟอร์ม 5 นัดล่าสุด</span><div id="formChips" class="fchips"></div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title">การเงิน & สัญญา</div></div>
+          <div class="fin">
+            <div><small>มูลค่าตัว</small><b id="infoVal" style="color:var(--accent-gold);">฿0</b></div>
+            <div><small>ค่าเหนื่อย/สัปดาห์</small><b id="infoWage">฿0</b></div>
+            <div><small>เงินสะสม</small><b id="infoBank">฿0</b></div>
+            <div><small>สัญญา</small><b id="infoContract" style="font-size:13px;">-</b></div>
+          </div>
+          <button class="btn-red hidden" id="btnRetire" style="margin-top:14px;" onclick="retireCareer()">🛑 ประกาศรีไทร์เลิกเล่นอาชีพ</button>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title">เอเย่นต์ส่วนตัว</div></div>
           <div id="agentHireSection">
-            <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;" id="agentHireDesc">คุณยังไม่มีเอเย่นต์ประจำตัว! จ้างเอเย่นต์เพื่อเปิดใช้งานเมนูเอเย่นต์และรับข่าวสารโอกาสย้ายทีมในไทยลีก</p>
-            <button class="btn-gold" id="btnHireAgent" style="max-width:320px;" onclick="hireAgent('ต้อม ธีระศักดิ์', false)">🤝 จ้างเอเย่นต์มืออาชีพ (ค่าบริการ 5%)</button>
+            <p class="muted-p" id="agentHireDesc">จ้างเอเย่นต์เพื่อรับข้อเสนอย้ายทีมในไทยลีก (หักค่าบริการ 5% ของค่าเหนื่อย)</p>
+            <button class="btn-blue" id="btnHireAgent" style="margin-top:10px;" onclick="hireAgent('ต้อม ธีระศักดิ์', false)">🤝 จ้างเอเย่นต์</button>
           </div>
-
           <div id="agentActiveSection" class="hidden">
-            <div style="font-size:13px; color:var(--accent-gold); font-weight:600; margin-bottom:8px;">
-              💬 เอเย่นต์ประจำตัว: <span id="agentActiveName">ต้อม ธีระศักดิ์</span>
-            </div>
-            <p style="font-size:13px; color:var(--text-muted);">คุณมีเอเย่นต์คอยดูแลผลประโยชน์แล้ว สามารถตรวจสอบกล่องข้อความย้ายทีมได้ที่เมนู <b>"💼 เอเย่นต์"</b> ที่แถบเมนูด้านล่าง</p>
-            <button class="btn-red" style="max-width:240px; margin-top:10px;" onclick="fireAgent()">❌ ไล่เอเย่นต์ออก</button>
+            <p class="muted-p">เอเย่นต์ของคุณ: <b id="agentActiveName" style="color:var(--accent-gold);">ต้อม ธีระศักดิ์</b><br>ดูข้อความและข้อเสนอได้ที่ โปรไฟล์ › เอเย่นต์</p>
+            <button class="btn-red" style="margin-top:10px;" onclick="fireAgent()">❌ ไล่เอเย่นต์ออก</button>
           </div>
         </div>
-
-        
-
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
-          <div class="card">
-            <div class="card-header"><div class="card-title">💼 สถานะการเงิน & ค่าตัว</div></div>
-            <div style="font-size:13px; line-height:1.9;">
-              <div>มูลค่าการย้ายทีม: <b style="color:var(--accent-green);" id="infoVal">฿150,000</b></div>
-              <div>ค่าเหนื่อยต่อสัปดาห์: <b style="color:var(--accent-gold);" id="infoWage">฿2,000</b></div>
-              <div>ยอดเงินสะสมในบัญชี: <b style="color:#fff;" id="infoBank">฿0</b></div>
-              <div>สัญญา: <b style="color:#fff;" id="infoContract">-</b></div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-header"><div class="card-title">📋 สถานะความไว้ใจของโค้ช</div></div>
-            <p style="font-size:13px; color:var(--text-muted); margin-bottom:10px;">พัฒนาจาก อคาเดมี่ (เยาวชน) ➔ ดันขึ้นชุดใหญ่ (ไทยลีก 1)</p>
-            <div style="background:#070a12; padding:12px; border-radius:6px; border:1px solid var(--bg-card-border); display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:13px;">คะแนนความไว้ใจ:</span>
-              <b style="color:var(--accent-gold); font-size:16px;" id="coachTrustText">15 / 100</b>
-            </div>
-            <div style="font-size:12px; color:var(--accent-gold); margin-top:8px;" id="nextGoalText"></div>
-            <button class="btn-red hidden" id="btnRetire" style="margin-top:12px;" onclick="retireCareer()">🛑 ประกาศรีไทร์เลิกเล่นอาชีพ</button>
-          </div>
-        </div>
+        <div class="credit">DEVELOPED BY <span>EARTH SIRAWICH</span></div>
       </div>
 
       <!-- AGENT TAB -->
@@ -467,32 +605,25 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
       <!-- TRAINING TAB -->
       <div id="tab-attrs" class="view-panel">
         <div class="card">
-          <div class="card-header"><div class="card-title">🏋️ ศูนย์ฝึกซ้อมประจำสโมสร</div></div>
-          
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:20px;">
-            <div style="padding:16px; background:#070a12; border-radius:8px; border:1px solid var(--bg-card-border);">
-              <div style="font-weight:600; color:#fff; margin-bottom:4px;">💪 ฝึกซ้อมประจำสัปดาห์</div>
-              <div style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">เลือกความหนักและค่าพลังที่อยากฝึก ฟิตต่ำหรือสโมสรเล็กจะพัฒนาช้าลง</div>
-              <select id="trainFocus" class="form-select" style="margin-bottom:8px"></select>
-              <select id="trainInt" class="form-select" style="margin-bottom:10px"><option value="light">🟢 เบา (ฟิต -10%)</option><option value="normal" selected>🟡 ปกติ (ฟิต -20%)</option><option value="heavy">🔴 หนัก (ฟิต -35% เสี่ยงบาดเจ็บ)</option></select>
-              <button class="btn-gold" id="btnDoTrain" onclick="doWeeklyTraining()">เข้าซ้อมสัปดาห์นี้</button>
-            </div>
-
-            <div style="padding:16px; background:#070a12; border-radius:8px; border:1px solid var(--bg-card-border);">
-              <div style="font-weight:600; color:#fff; margin-bottom:4px;">🛌 พักผ่อนฟื้นฟูร่างกาย</div>
-              <div style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">พักผ่อนฟื้นฟูความฟิต (+30% ความฟิต) *หากเลือกพักถือว่าไม่ได้ซ้อม</div>
-              <button class="btn-blue" id="btnDoRest" onclick="restPlayer()">พักผ่อนสโมสร</button>
-            </div>
-          </div>
-
-          <h4 style="margin-bottom:12px; font-size:14px; color:var(--text-muted);">ค่าพลังปัจจุบันของคุณ</h4>
-          <div id="attributesListGrid" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"></div>
+          <div class="card-header"><div class="card-title">ค่าพลังของคุณ</div></div>
+          <div id="radarBox" class="radar-wrap"></div>
+          <div id="attributesListGrid" class="alist"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">แผนประจำสัปดาห์</div></div>
+          <p class="muted-p" style="margin-bottom:12px;">เลือกซ้อมหรือพักอย่างใดอย่างหนึ่ง ก่อนจะลงแข่งได้ ฟิตต่ำหรือสโมสรเล็กจะพัฒนาช้าลง</p>
+          <label class="lbl">โฟกัสค่าพลัง</label>
+          <select id="trainFocus" class="form-select" style="margin-bottom:10px"></select>
+          <label class="lbl">ความหนัก</label>
+          <select id="trainInt" class="form-select" style="margin-bottom:14px"><option value="light">🟢 เบา (ฟิต -10%)</option><option value="normal" selected>🟡 ปกติ (ฟิต -20%)</option><option value="heavy">🔴 หนัก (ฟิต -35% มีโอกาสบาดเจ็บ)</option></select>
+          <button class="btn-gold" id="btnDoTrain" onclick="doWeeklyTraining()">💪 เข้าซ้อมสัปดาห์นี้</button>
+          <button class="btn-blue" id="btnDoRest" style="margin-top:8px;" onclick="restPlayer()">🛌 พักฟื้น (+30% ฟิต · นับว่าไม่ได้ซ้อม)</button>
         </div>
         <div class="card" id="posCard">
-          <div class="card-header"><div class="card-title">📋 คุยกับโค้ชเรื่องตำแหน่ง</div></div>
-          <div id="posInfo" style="font-size:13px; color:var(--text-muted); margin-bottom:10px; white-space:pre-line;"></div>
+          <div class="card-header"><div class="card-title">คุยกับโค้ชเรื่องตำแหน่ง</div></div>
+          <div id="posInfo" class="muted-p" style="white-space:pre-line; margin-bottom:10px;"></div>
           <select id="posSel" class="form-select" style="margin-bottom:10px;"></select>
-          <button class="btn-gold" id="btnPos" onclick="requestPosChange()">🗣️ ขอย้ายตำแหน่ง</button>
+          <button class="btn-blue" id="btnPos" onclick="requestPosChange()">🗣️ ขอย้ายตำแหน่ง</button>
         </div>
       </div>
 
@@ -532,13 +663,16 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
       <!-- MATCH TAB -->
       <div id="tab-match" class="view-panel">
         <div class="card" id="matchLiveCard">
-          <div id="matchPreNotice" style="text-align:center; padding:30px 20px;">
-            <div style="font-size:22px; font-weight:700; color:var(--accent-gold); margin-bottom:8px;" id="matchVsTitle">สัปดาห์นี้พบกับ บีจี ปทุม ยูไนเต็ด U18</div>
-            <div style="font-size:14px; color:var(--text-muted); margin-bottom:20px;" id="matchCupTypeText">รายการ: ไทย Youth League (U18)</div>
-            <div style="color:var(--accent-red); font-size:13px; margin-bottom:20px;" id="matchNoticeMsg">🔒 คุณต้องเลือกซ้อมหรือพักผ่อนประจำสัปดาห์ก่อนจึงจะเริ่มแข่งได้!</div>
-            <button class="btn-gold" id="btnStartLiveMatch" disabled onclick="startLiveMatch()" style="max-width:320px; margin:0 auto; padding:14px;">
-              ⚽ คิกออฟเริ่มการแข่งขัน
-            </button>
+          <div id="matchPreNotice" class="mc">
+            <div class="mc-comp" id="matchCupTypeText">รายการ</div>
+            <div class="mc-teams">
+              <div class="mc-team"><div class="team-badge-circle logo-only" id="mcHomeBadge">MY</div><div id="mcHomeName"></div></div>
+              <div class="mc-vs">VS</div>
+              <div class="mc-team"><div class="team-badge-circle logo-only" id="mcAwayBadge">OPP</div><div id="mcAwayName"></div></div>
+            </div>
+            <div class="mc-title" id="matchVsTitle"></div>
+            <div class="mc-note" id="matchNoticeMsg">🔒 เลือกซ้อมหรือพักประจำสัปดาห์ก่อนจึงจะเริ่มแข่งได้</div>
+            <button class="btn-gold" id="btnStartLiveMatch" disabled onclick="startLiveMatch()">⚽ คิกออฟ</button>
           </div>
 
           <div id="liveStreamArea" class="hidden">
@@ -695,7 +829,7 @@ function playerStatsHTML(table, lvl) {
   rows.sort((a, b) => (b.v - a.v) || ((a.m || 0) - (b.m || 0)));
   let rank = 0, prev = null;
   const cap = statView === 'cs' ? '' : `<div style="font-size:12px; color:var(--text-muted); text-align:right; padding:0 6px 4px;">${statView === 'goals' ? 'ประตู' : 'แอสซิสต์'} | นัดที่ลงเล่น</div>`;
-  return cap + rows.slice(0, 15).map((r, i) => { if (r.v !== prev) { rank = i + 1; prev = r.v; } return `<div style="display:flex; align-items:center; gap:10px; padding:10px 6px; border-bottom:1px solid rgba(255,255,255,.12);${r.me ? ' background:rgba(255,210,63,.2); border-radius:10px;' : ''}"><div style="width:26px; text-align:center; color:var(--text-muted);">${rank}</div><div style="flex:1; min-width:0;"><div style="font-weight:700;">${r.n}</div><div style="font-size:12px; color:var(--text-muted);"><span class="lg-row">${logoHTML(r.club, 16)}<span>${r.club} · ${r.pos}</span></span></div></div><div style="font-family:var(--font-title); font-size:20px; color:var(--accent-gold);">${r.v}${r.m !== undefined ? ' <span style="font-size:13px; color:var(--text-muted);">| ' + r.m + '</span>' : ''}</div></div>`; }).join('');
+  return cap + rows.slice(0, 15).map((r, i) => { if (r.v !== prev) { rank = i + 1; prev = r.v; } return `<div style="display:flex; align-items:center; gap:10px; padding:10px 6px; border-bottom:1px solid rgba(255,255,255,.12);${r.me ? ' background:rgba(46,230,166,.12); border-radius:10px;' : ''}"><div style="width:26px; text-align:center; color:var(--text-muted);">${rank}</div><div style="flex:1; min-width:0;"><div style="font-weight:700;">${r.n}</div><div style="font-size:12px; color:var(--text-muted);"><span class="lg-row">${logoHTML(r.club, 16)}<span>${r.club} · ${r.pos}</span></span></div></div><div style="font-family:var(--font-title); font-size:20px; color:var(--accent-gold);">${r.v}${r.m !== undefined ? ' <span style="font-size:13px; color:var(--text-muted);">| ' + r.m + '</span>' : ''}</div></div>`; }).join('');
 }
 let matchBannedNow = false;
 let matchSubbedOff = false;
@@ -784,7 +918,7 @@ function requestTransfer() {
 function renderCareerStats() {
   renderAwards();
   const st = P.stats, avg = st.rN ? (st.rSum / st.rN).toFixed(1) : '-';
-  const box = (v, l) => `<div style="background:rgba(10,25,70,.55); padding:12px; border-radius:12px; text-align:center;"><div style="font-family:var(--font-title); font-size:20px; color:var(--accent-gold);">${v}</div><div style="font-size:11px; color:var(--text-muted);">${l}</div></div>`;
+  const box = (v, l) => `<div style="background:#10151c; padding:12px; border-radius:12px; text-align:center;"><div style="font-family:var(--font-title); font-size:20px; color:var(--accent-gold);">${v}</div><div style="font-size:11px; color:var(--text-muted);">${l}</div></div>`;
   document.getElementById('careerTotals').innerHTML = box(st.apps, 'นัดรวม') + box(st.goals, 'ประตูรวม') + box(st.assists, 'แอสซิสต์รวม') + box(avg, 'เรตติ้งเฉลี่ย') + (P.nat ? `<div style="grid-column:1/-1; font-size:12px; color:var(--text-muted);">🇹🇭 ทีมชาติ: ${P.nat.caps} นัด · ${P.nat.goals} ประตู · ${P.nat.assists} แอสซิสต์ · ${P.nat.titles} แชมป์</div>` : '');
   const rows = (P.history || []).map(h => `<tr><td>${h.season}</td><td>${h.age}</td><td><span class="lg-row">${logoHTML(h.club, 18)}<span>${h.club}</span></span></td><td>${h.apps}</td><td>${h.goals}</td><td>${h.assists}</td><td>${h.rating || '-'}</td><td>${h.pos || '-'}</td></tr>`);
   rows.push(`<tr class="my-team"><td>${currentSeason}*</td><td>${P.age}</td><td><span class="lg-row">${logoHTML(P.club, 18)}<span>${P.club}</span></span></td><td>${P.season.apps}</td><td>${P.season.goals}</td><td>${P.season.assists}</td><td>${P.season.rN ? (P.season.rSum / P.season.rN).toFixed(1) : '-'}</td><td>${tbl().findIndex(t => t.name === P.club) + 1}</td></tr>`);
@@ -1043,9 +1177,9 @@ function updateDashboardUI() {
   document.getElementById('btnDoRest').disabled = hasTrainedThisWeek || hasRestedThisWeek;
 
   document.getElementById('attributesListGrid').innerHTML = Object.keys(P.attrs).map(k => `
-    <div style="background:rgba(10,25,70,.55); padding:10px 12px; border-radius:12px;">
+    <div style="background:#10151c; padding:10px 12px; border-radius:12px;">
       <div style="display:flex; justify-content:space-between;"><span style="font-size:12px; color:var(--text-muted);">${STAT_LABELS[k]}</span><b style="color:var(--accent-gold);">${P.attrs[k]}</b></div>
-      <div style="height:8px; border-radius:6px; background:rgba(0,0,0,.35); margin-top:6px; overflow:hidden;"><div style="width:${Math.min(100, Math.round(P.attrs[k] / P.potential * 100))}%; height:100%; background:linear-gradient(90deg,#ffd23f,#5df07a);"></div></div>
+      <div style="height:8px; border-radius:6px; background:rgba(0,0,0,.35); margin-top:6px; overflow:hidden;"><div style="width:${Math.min(100, Math.round(P.attrs[k] / P.potential * 100))}%; height:100%; background:var(--accent-gold);"></div></div>
     </div>`).join('') + `<div style="grid-column:1/-1; font-size:12px; color:var(--text-muted);">ศักยภาพโดยประมาณ ~${Math.round(P.potential / 5) * 5} · ${P.injuredWeeks > 0 ? '🩹 บาดเจ็บ เหลืออีก ' + P.injuredWeeks + ' สัปดาห์' : '✅ ร่างกายพร้อม'}</div>`;
 
   document.getElementById('tableTitleText').textContent = isFirstTeam() 
@@ -1474,7 +1608,7 @@ function penaltyChoices(min) {
   curChoices = PEN_OPTS.map(o => ({ ...o, pen: true }));
   document.getElementById('decisionBox').classList.remove('hidden');
   document.getElementById('decTitle').textContent = `🥅 (${min}') จุดโทษ! เลือกมุมที่จะยิง`;
-  document.getElementById('decDesc').textContent = 'บอลวางอยู่บนจุดโทษ ผู้รักษาประตูกำลังเตรียมพุ่ง ทุกมุมเสี่ยงต่างกัน ยิงสูงเสี่ยงพลาด ยิงล่างเสี่ยงโดนเซฟ';
+  document.getElementById('decDesc').textContent = 'บอลวางอยู่บนจุดโทษ ผู้รักษาประตูกำลังเตรียมพุ่ง แต่ละมุมให้ผลต่างกัน ยิงสูงอาจเลยกรอบ ยิงล่างอาจถูกเซฟ';
   document.getElementById('decChoices').innerHTML = curChoices.map((c, i) => `<div class="choice-btn" onclick="makeChoice(${i})">${c.t}</div>`).join('');
 }
 function penaltyShot(c) {
@@ -1721,7 +1855,7 @@ const EXTRA2 = {
 [...SCEN.st, ...SCEN.wg, ...SCEN.cam, ...SCEN.cm, ...SCEN.cdm, ...SCEN.cb, ...SCEN.fb].forEach(x => { if (EXTRA2[x.id]) x.ch.push(...EXTRA2[x.id].slice(0, Math.max(0, 5 - x.ch.length))); });
 let curChoices = [];
 const usedScen = [];
-const RISK_TAG = { S: '🛡️ เอาชัวร์', N: '⚖️ สมดุล', R: '🔥 เสี่ย' };
+const RISK_TAG = { S: '🛡️ ปลอดภัย', N: '⚖️ สมดุล', R: '⚡ บุกเต็มที่' };
 function pickScenario() {
   let pool; const r = Math.random() < 0.7;
   if (P.pos === 'ST') pool = SCEN.st;
@@ -1829,6 +1963,7 @@ function showMatchSummary() {
   document.getElementById('ratingSummaryBox').classList.remove('hidden');
   if (matchMinutesPlayed > 0) {
     document.getElementById('resRating').textContent = matchRating.toFixed(1);
+    document.getElementById('resRating').style.color = matchRating >= 7 ? '#2ee6a6' : matchRating >= 6 ? '#f5c542' : '#ff5c6c';
     document.getElementById('resSummaryText').textContent = `ลงสนาม ${matchMinutesPlayed} นาที | ยิง ${matchGoals} ประตู | ทำ ${matchAssists} แอสซิสต์${matchRed ? ' | 🟥 ใบแดง' : matchYellow ? ' | 🟨 ใบเหลือง' : ''}`;
   } else {
     document.getElementById('resRating').textContent = "N/A";
@@ -2000,16 +2135,9 @@ function runCeremony(defs, ctx, done) {
   function award(i) {
     if (i >= defs.length) return finale();
     const d = defs[i], names = d.cands.map(c => c.n), wi = d.cands.indexOf(d.winner), n = names.length;
-    const box = el('ac-spin', '...'); const nom = el('ac-nom', 'ผู้เข้าชิง: ' + names.join(' · '));
-    const skip = btn('⏩ ข้ามการลุ้น', () => reveal(), 'ac-btn ac-ghost');
+    const box = el('ac-spin', 'ผู้ชนะคือ ?'); const nom = el('ac-nom', 'ผู้เข้าชิง: ' + names.join(' · '));
+    const skip = btn('🏅 ประกาศผู้ชนะ', () => reveal());
     show(el('ac-crown', d.icon), el('ac-award', d.title), nom, box, skip);
-    let total = 26 + Math.floor(Math.random() * 6), k = 0, idx = (((wi - total) % n) + n) % n;
-    function tick() {
-      idx = (idx + 1) % n; k++; box.textContent = names[idx];
-      if (k >= total) { timer = setTimeout(reveal, 500); return; }
-      timer = setTimeout(tick, 60 + Math.pow(k / total, 3) * 520);
-    }
-    timer = setTimeout(tick, 400);
     function reveal() {
       clearTimeout(timer);
       const w = d.winner; box.textContent = w.n; box.classList.add('done');
@@ -2017,11 +2145,9 @@ function runCeremony(defs, ctx, done) {
       if (w.me) {
         card.classList.add('win-me');
         parts.push(el('ac-win', `🎉 คุณคือผู้ชนะ! รับเงินรางวัล ฿${d.prize.toLocaleString()}`));
-        for (let c = 0; c < 26; c++) { const s = document.createElement('span'); s.className = 'ac-conf'; s.style.left = Math.random() * 100 + '%'; s.style.animationDelay = Math.random() * 1.2 + 's'; s.style.animationDuration = 2 + Math.random() * 1.5 + 's'; card.appendChild(s); }
       } else card.classList.remove('win-me');
       parts.push(btn(i === defs.length - 1 ? '📜 ดูสรุป' : 'รางวัลถัดไป ▶', () => { card.classList.remove('win-me'); award(i + 1); }));
       card.replaceChildren(...parts);
-      if (w.me) for (let c = 0; c < 26; c++) { const s = document.createElement('span'); s.className = 'ac-conf'; s.style.left = Math.random() * 100 + '%'; s.style.animationDelay = Math.random() * 1.2 + 's'; s.style.animationDuration = 2 + Math.random() * 1.5 + 's'; card.appendChild(s); }
     }
   }
   function finale() {
@@ -2250,19 +2376,22 @@ function renderLeagueTable(animate) {
   document.getElementById('playerStatsList').innerHTML = statView === 'table' ? '' : playerStatsHTML(t, lvl);
   document.getElementById('leagueTableBody').innerHTML = t.map((x, idx) => {
     const mark = lvl === 'first' && idx >= t.length - 2 ? ' ⬇️' : lvl === 'div2' && idx < 2 ? ' ⬆️' : '';
-    return `<tr class="${x.name === P?.club && ((lvl === 'first') === isFirstTeam() || lvl === 'div2') ? 'my-team' : ''}"><td><b>${idx + 1}</b></td><td><span class="lg-row">${logoHTML(x.name, 22)}<span>${x.name}${lvl === 'youth' ? ' U18' : ''}${mark}</span></span></td><td>${x.p}</td><td>${x.w}</td><td>${x.d}</td><td>${x.l}</td><td>${(x.gf || 0) - (x.ga || 0)}</td><td><b>${x.pts}</b></td></tr>`;
+    const zc = lvl === 'first' ? (idx === 0 ? 'z-top' : idx >= t.length - 2 ? 'z-down' : '') : lvl === 'div2' ? (idx < 2 ? 'z-up' : '') : (idx === 0 ? 'z-top' : ''); return `<tr class="${zc} ${x.name === P?.club && ((lvl === 'first') === isFirstTeam() || lvl === 'div2') ? 'my-team' : ''}"><td><b>${idx + 1}</b></td><td><span class="lg-row">${logoHTML(x.name, 22)}<span>${x.name}${lvl === 'youth' ? ' U18' : ''}${mark}</span></span></td><td>${x.p}</td><td>${x.w}</td><td>${x.d}</td><td>${x.l}</td><td>${(x.gf || 0) - (x.ga || 0)}</td><td><b>${x.pts}</b></td></tr>`;
   }).join('');
 }
 
-function switchTab(tabId, el) {
-  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+const PROFILE_SUBS = ['trophies', 'lifestyle', 'agent'];
+let lastProfileSub = 'trophies';
+function switchTab(tabId) {
+  if (tabId === 'profile') tabId = (lastProfileSub === 'agent' && !agentHired) ? 'trophies' : lastProfileSub;
+  const isSub = PROFILE_SUBS.includes(tabId);
+  if (isSub) lastProfileSub = tabId;
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.toggle('active', i.dataset.tab === (isSub ? 'profile' : tabId)));
   document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
   document.getElementById(`tab-${tabId}`).classList.add('active');
-  if (el) el.classList.add('active');
-
-  if (tabId === 'agent') {
-    document.getElementById('agentNotify').classList.add('hidden');
-  }
+  document.getElementById('profileSeg').classList.toggle('hidden', !isSub);
+  document.querySelectorAll('.seg-btn').forEach(b => b.classList.toggle('active', b.dataset.sub === tabId));
+  if (tabId === 'agent') document.getElementById('agentNotify').classList.add('hidden');
 }
 
 // ===== In-game popups =====
@@ -2607,6 +2736,70 @@ runCeremony = function (defs, ctx, done) {
     SC('cm8','ได้ที่ว่างหน้ากรอบเขตโทษ!','แนวรับคู่แข่งถอยลึกหน้ากรอบเขตโทษ ไม่มีใครออกมากดดันคุณ',[G('ยิงไกลมุมไกล','R'),A('แทงทะลุช่องให้กองหน้า','N'),A('เปิดครอสลอยเข้ากลางกรอบ','N'),P('เล่นสั้นรอจังหวะ','S'),P('พาบอลเข้าไปใกล้ขึ้นก่อนตัดสินใจ','N','pc')])
   ];
 })();
+</script>
+
+<script>
+/* ===== NEXTGEN FC 2.0 — layout logic (ไม่แตะระบบเกม) ===== */
+const $id = id => document.getElementById(id);
+const CODE_OF = n => { const t = [...leagueTeams, ...youthTeams, ...div2Teams].find(x => x.name === n); return (t && t.code) || n.slice(0, 3); };
+applyLabels = function () {
+  Object.assign(STAT_LABELS, $id('inPos').value === 'GK' ? GKL : NORML);
+  [['Pace','pace'],['Shooting','shooting'],['Passing','passing'],['Defending','defending'],['Composure','composure'],['Physical','physical']].forEach(([a, k]) => { $id('pv' + a).previousElementSibling.textContent = STAT_LABELS[k].split(' (')[0]; });
+};
+renderAdjusters = function () {
+  $id('statAdjusters').innerHTML = Object.keys(tempStats).map(k => `
+    <div class="adj"><div class="adj-top"><span>${STAT_LABELS[k]}</span><b>${tempStats[k]}</b></div>
+    <div class="adj-row"><button class="btn-step" onclick="adjustStat('${k}', -1)">−</button><div class="bar"><i style="width:${tempStats[k]}%"></i></div><button class="btn-step" onclick="adjustStat('${k}', 1)">+</button></div></div>`).join('');
+};
+const _up = updatePreview;
+updatePreview = function () {
+  _up();
+  const pos = $id('inPos').value, age = $id('inAge').value;
+  document.querySelectorAll('.pos-chip').forEach(b => b.classList.toggle('on', b.dataset.p === pos));
+  document.querySelectorAll('.age-chip').forEach(b => b.classList.toggle('on', b.dataset.a === age));
+  $id('prevRing').style.setProperty('--p', Math.min(99, calcOvr(tempStats, pos)));
+};
+function pickPos(p) { $id('inPos').value = p; onPosChange(); }
+function pickAge(a) { $id('inAge').value = a; updatePreview(); }
+function goStep(n) {
+  [1, 2].forEach(i => { $id('step' + i).classList.toggle('hidden', i !== n); $id('stepDot' + i).classList.toggle('on', i === n); });
+  $id('creatorScreen').scrollTop = 0;
+}
+function radarSVG() {
+  const ks = ['pace', 'shooting', 'passing', 'defending', 'composure', 'physical'], ab = ['PAC', 'SHO', 'PAS', 'DEF', 'CMP', 'PHY'], cx = 125, cy = 118, R = 80;
+  const pt = (i, f) => { const a = -Math.PI / 2 + i * Math.PI / 3; return [cx + Math.cos(a) * R * f, cy + Math.sin(a) * R * f]; };
+  const poly = f => ks.map((_, i) => pt(i, f).map(v => v.toFixed(1)).join(',')).join(' ');
+  const val = ks.map((k, i) => pt(i, Math.min(1, (P.attrs[k] || 0) / 100)).map(v => v.toFixed(1)).join(',')).join(' ');
+  const lbl = ks.map((_, i) => { const [x, y] = pt(i, 1.28); return `<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="middle" font-size="11" fill="#8591a3" font-family="Prompt">${ab[i]}</text>`; }).join('');
+  const axes = ks.map((_, i) => { const [x, y] = pt(i, 1); return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#222c38"/>`; }).join('');
+  return `<svg class="radar" viewBox="0 0 250 236">${[.34, .67, 1].map(f => `<polygon points="${poly(f)}" fill="none" stroke="#222c38"/>`).join('')}${axes}<polygon points="${val}" fill="rgba(46,230,166,.22)" stroke="#2ee6a6" stroke-width="2" stroke-linejoin="round"/>${lbl}</svg>`;
+}
+function renderPro() {
+  if (!P) return;
+  const ovr = ovrOf(), se = P.season, avg = se.rN ? (se.rSum / se.rN).toFixed(1) : '-';
+  $id('heroRing').style.setProperty('--p', Math.min(99, ovr));
+  $id('seasonFill').style.width = Math.min(100, currentWeek / 30 * 100) + '%';
+  $id('meterFit').style.width = P.fitness + '%'; $id('meterFit').className = P.fitness < 30 ? 'low' : '';
+  $id('meterFitVal').textContent = P.fitness + '%';
+  $id('meterTrust').style.width = P.coachTrust + '%';
+  $id('hApps').textContent = se.apps; $id('hGoals').textContent = se.goals; $id('hAssists').textContent = se.assists; $id('hAvg').textContent = avg;
+  const f = P.form || [];
+  $id('formChips').innerHTML = f.length ? f.map(r => `<span class="fchip ${r >= 7 ? 'g' : r >= 6 ? 'y' : 'r'}">${r.toFixed(1)}</span>`).join('') : '<span class="muted-p">ยังไม่มีผลงาน</span>';
+  const o = currentOpponent;
+  if (o) {
+    const box = (n) => `<div class="lgbox">${logoHTML(n, 0, CODE_OF(n))}</div>`;
+    $id('homeNextBody').innerHTML = `<div class="vs"><div class="vt">${box(P.club)}<span>${P.club}</span></div><div class="vsx">${isHome ? 'เหย้า' : 'เยือน'}<br>VS</div><div class="vt">${box(o.name)}<span>${o.name}${isFirstTeam() ? '' : ' U18'}</span></div></div><div class="nextmeta">${isCupMatch ? (isFirstTeam() ? 'ช้าง เอฟเอ คัพ' : 'เยาวชน เอฟเอ คัพ') + ' · ' + cupRoundText : (isFirstTeam() ? 'ไทยลีก 1' : 'ไทย Youth League U18')} · ${hasTrainedThisWeek || hasRestedThisWeek ? '✅ พร้อมลงสนาม' : '⚠️ เลือกซ้อมหรือพักก่อน'}</div>`;
+    setBadge('mcHomeBadge', P.club, CODE_OF(P.club)); setBadge('mcAwayBadge', o.name, CODE_OF(o.name));
+    $id('mcHomeName').textContent = P.club; $id('mcAwayName').textContent = o.name + (isFirstTeam() ? '' : ' U18');
+  }
+  $id('radarBox').innerHTML = radarSVG();
+  $id('attributesListGrid').innerHTML = Object.keys(P.attrs).map(k => `<div class="arow"><span>${STAT_LABELS[k]}</span><b>${P.attrs[k]}</b><div class="bar"><i style="width:${Math.min(100, P.attrs[k])}%"></i></div></div>`).join('') + `<div class="muted-p" style="margin-top:4px;">ศักยภาพโดยประมาณ ~${Math.round(P.potential / 5) * 5} · ${P.injuredWeeks > 0 ? '🩹 บาดเจ็บ เหลืออีก ' + P.injuredWeeks + ' สัปดาห์' : '✅ ร่างกายพร้อม'}</div>`;
+}
+const _udu = updateDashboardUI;
+updateDashboardUI = function () { _udu(); try { renderPro(); } catch (e) { console.error(e); } };
+const _pnm = prepareNextMatch;
+prepareNextMatch = function () { _pnm(); try { renderPro(); } catch (e) { console.error(e); } };
+updatePreview();
 </script>
 
 </body>
