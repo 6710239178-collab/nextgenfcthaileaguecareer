@@ -6,7 +6,7 @@
 <title>NEXTGEN FC 2.0</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
   --bg-dark: #090d16;
@@ -422,6 +422,43 @@ input,textarea{user-select:text;-webkit-user-select:text}
 .log-item.highlight{background:rgba(46,230,166,.1)}.log-item.alert{background:rgba(255,92,108,.1)}
 .fixed-footer-cr{display:none!important}
 .credit{text-align:center;font-size:10px;letter-spacing:.5px;color:#5b6676;margin:18px 0 4px}.credit span{color:var(--accent-gold);font-weight:600}
+
+/* ===== FONT + MATCH EVENT UI ===== */
+:root{--font-main:'IBM Plex Sans Thai',system-ui,-apple-system,'Segoe UI',sans-serif;--font-title:'IBM Plex Sans Thai',system-ui,-apple-system,'Segoe UI',sans-serif}
+body{font-variant-numeric:tabular-nums;line-height:1.5;letter-spacing:0}
+.ring-in{font-weight:600}.score-display{font-weight:600}.hero-name{font-weight:600}
+.tile b,.fin b,.ms b,.adj-top b,.arow b,.rating-num{font-weight:600}
+.live-scoreboard{padding:12px}.live-badge{margin-bottom:8px}
+#liveStreamArea{position:relative}
+#decisionBox{background:#10161e;border:1px solid var(--bg-card-border);max-height:68vh}
+.ev-top{display:flex;gap:6px;align-items:center;margin-bottom:8px}
+.ev-tag{background:var(--mint-soft);color:var(--accent-gold);font-size:12px;font-weight:600;border-radius:999px;padding:3px 10px}
+.ev-tag.def{background:rgba(90,169,255,.14);color:#8fc4ff}
+.ev-min,.ev-score{background:var(--s2);color:var(--text-muted);font-size:12px;border-radius:999px;padding:3px 10px}
+.ev-score{margin-left:auto}
+.ev-title{font-size:17px;font-weight:600;color:#fff;margin-bottom:8px}
+.ev-pitch svg{width:100%;height:auto;display:block;border-radius:12px}
+.ev-desc{font-size:13px;color:#b7c1cf;line-height:1.55;margin:10px 0;white-space:pre-line}
+.ev-choices{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ev-card{display:flex;flex-direction:column;gap:8px;background:var(--s2);border:1px solid #2a3340;border-radius:14px;padding:10px 11px 12px;cursor:pointer;text-align:left;color:var(--text-main);font:500 13.5px/1.4 var(--font-main)}
+.ev-card:active{transform:scale(.98);border-color:var(--accent-gold)}
+.ev-ct{display:flex;align-items:center;gap:8px}
+.ev-card .ic{width:28px;height:28px;border-radius:9px;background:var(--mint-soft);display:grid;place-items:center;flex-shrink:0}
+.ev-card .ic svg{width:17px;height:17px;stroke:var(--accent-gold);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.ev-card small{font-size:11px;color:var(--text-muted);font-weight:600}
+.ev-card:last-child:nth-child(odd){grid-column:1/-1}
+.log-item{display:flex;gap:10px;align-items:flex-start;line-height:1.45}
+.log-item .lm{flex:0 0 38px;text-align:center;background:#222c38;border-radius:8px;padding:1px 0;font-size:12px;font-weight:600;color:var(--text-muted)}
+.log-item.highlight .lm{background:rgba(46,230,166,.18);color:var(--accent-gold)}
+.log-item.alert .lm{background:rgba(255,92,108,.18);color:#ff8794}
+.log-item .lt{flex:1;min-width:0}
+.ev-banner{position:absolute;left:50%;top:176px;transform:translateX(-50%);z-index:70;padding:10px 26px;border-radius:16px;font-size:26px;font-weight:700;text-align:center;pointer-events:none;animation:evPop 1.9s ease forwards;box-shadow:0 10px 30px rgba(0,0,0,.5);white-space:nowrap}
+.ev-banner small{display:block;font-size:12px;font-weight:500;margin-top:2px;opacity:.9;max-width:270px;overflow:hidden;text-overflow:ellipsis}
+.ev-banner.goal{background:var(--accent-gold);color:#04231a}
+.ev-banner.ok{background:#16342d;color:var(--accent-gold);border:1px solid var(--accent-gold)}
+.ev-banner.bad{background:#2a1519;color:#ff8794;border:1px solid rgba(255,92,108,.55)}
+.ev-banner.yellow{background:#f5c542;color:#2a2000}
+@keyframes evPop{0%{opacity:0;transform:translateX(-50%) scale(.7)}12%{opacity:1;transform:translateX(-50%) scale(1.06)}20%{transform:translateX(-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(-8px) scale(.98)}}
 </style>
 </head>
 <body>
@@ -703,9 +740,11 @@ input,textarea{user-select:text;-webkit-user-select:text}
             <div class="match-log-box" id="matchLogBox"></div>
 
             <div class="decision-box hidden" id="decisionBox">
-              <div style="font-size:13px; color:var(--accent-gold); font-weight:600; margin-bottom:4px;" id="decTitle">⚡ เหตุการณ์ตัดสินใจ!</div>
-              <div style="font-size:14px; color:#fff; margin-bottom:12px;" id="decDesc">คุณได้บอลในสนาม!</div>
-              <div id="decChoices"></div>
+              <div class="ev-top"><span class="ev-tag" id="evTag">บุก</span><span class="ev-min" id="evMin">0'</span><span class="ev-score" id="evScore">เสมอ 0-0</span></div>
+              <div class="ev-title" id="decTitle">เหตุการณ์</div>
+              <div class="ev-pitch" id="evPitch"></div>
+              <div class="ev-desc" id="decDesc"></div>
+              <div id="decChoices" class="ev-choices"></div>
             </div>
 
             <div class="rating-modal hidden" id="ratingSummaryBox">
@@ -2770,7 +2809,7 @@ function radarSVG() {
   const pt = (i, f) => { const a = -Math.PI / 2 + i * Math.PI / 3; return [cx + Math.cos(a) * R * f, cy + Math.sin(a) * R * f]; };
   const poly = f => ks.map((_, i) => pt(i, f).map(v => v.toFixed(1)).join(',')).join(' ');
   const val = ks.map((k, i) => pt(i, Math.min(1, (P.attrs[k] || 0) / 100)).map(v => v.toFixed(1)).join(',')).join(' ');
-  const lbl = ks.map((_, i) => { const [x, y] = pt(i, 1.28); return `<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="middle" font-size="11" fill="#8591a3" font-family="Prompt">${ab[i]}</text>`; }).join('');
+  const lbl = ks.map((_, i) => { const [x, y] = pt(i, 1.28); return `<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="middle" font-size="11" fill="#8591a3" font-family="IBM Plex Sans Thai">${ab[i]}</text>`; }).join('');
   const axes = ks.map((_, i) => { const [x, y] = pt(i, 1); return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#222c38"/>`; }).join('');
   return `<svg class="radar" viewBox="0 0 250 236">${[.34, .67, 1].map(f => `<polygon points="${poly(f)}" fill="none" stroke="#222c38"/>`).join('')}${axes}<polygon points="${val}" fill="rgba(46,230,166,.22)" stroke="#2ee6a6" stroke-width="2" stroke-linejoin="round"/>${lbl}</svg>`;
 }
@@ -2800,6 +2839,98 @@ updateDashboardUI = function () { _udu(); try { renderPro(); } catch (e) { conso
 const _pnm = prepareNextMatch;
 prepareNextMatch = function () { _pnm(); try { renderPro(); } catch (e) { console.error(e); } };
 updatePreview();
+</script>
+
+<script>
+/* ===== หน้าเหตุการณ์ในแมตช์ (สนามจำลอง + การ์ดตัวเลือก + แบนเนอร์ผล) ===== */
+const EV_ICONS = {
+  sh: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>',
+  pa: '<svg viewBox="0 0 24 24"><path d="M4 17c4-9 10-9 16-3"/><path d="m16 9 4 5-6 1"/></svg>',
+  pc: '<svg viewBox="0 0 24 24"><path d="M13 3 5 13h6l-1 8 8-10h-6z"/></svg>',
+  df: '<svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6z"/></svg>'
+};
+const EV_LBL = { sh: 'ยิง', pa: 'จ่าย', pc: 'ลากเลี้ยง', df: 'ป้องกัน' };
+const EV_LBL_GK = { sh: 'รับบอล', pa: 'เตะ/จ่าย', pc: 'ปฏิกิริยา', df: 'จัดตำแหน่ง' };
+function evZone(id) {
+  const n = id || '';
+  if (/^g\d/.test(n)) return { x: .07, y: .5, t: 'def' };
+  if (/^(cb|d)\d/.test(n)) return { x: .2, y: .5, t: 'def' };
+  if (/^cdm/.test(n)) return { x: .36, y: .5, t: 'mid' };
+  if (/^(cm|m)\d/.test(n)) return { x: .52, y: .5, t: 'mid' };
+  if (/^cam/.test(n)) return { x: .7, y: .5, t: 'atk' };
+  if (/^st/.test(n)) return { x: .88, y: .5, t: 'atk' };
+  if (/^wg/.test(n)) return { x: .82, y: P.pos === 'LW' ? .14 : .86, t: 'atk' };
+  if (/^a\d/.test(n)) return { x: .86, y: .5, t: 'atk' };
+  if (/^f\d/.test(n)) { const odd = (+n.slice(1)) % 2 === 1, y = P.pos === 'LB' ? .12 : .88; return odd ? { x: .68, y, t: 'atk' } : { x: .24, y, t: 'def' }; }
+  return { x: .5, y: .5, t: 'mid' };
+}
+function evFind(id) {
+  return [...SCEN.atk, ...SCEN.mid, ...SCEN.def, ...SCEN.gk, ...SCEN.fb, ...SCEN.st, ...SCEN.wg, ...SCEN.cam, ...SCEN.cm, ...SCEN.cdm, ...SCEN.cb].find(x => x.id === id);
+}
+function evPitchSVG(z, seed, pen) {
+  const W = 240, H = 104, px = z.x * W, py = z.y * H;
+  let h = 0; for (const ch of seed) h = (h * 31 + ch.charCodeAt(0)) % 100003;
+  const r = k => { const v = Math.sin(h * 0.001 + k * 12.9898) * 43758.5453; return v - Math.floor(v); };
+  const cl = (v, a, b) => Math.max(a, Math.min(b, v));
+  const L = '#1f3a31', dots = [];
+  if (!pen) {
+    for (let i = 0; i < 3; i++) dots.push(`<circle cx="${cl(px + r(i) * 46 - 8, 14, W - 14).toFixed(1)}" cy="${cl(py + r(i + 5) * 56 - 28, 10, H - 10).toFixed(1)}" r="4" fill="#ff5c6c" opacity=".85"/>`);
+    for (let i = 0; i < 2; i++) dots.push(`<circle cx="${cl(px + r(i + 9) * 70 - 35, 14, W - 14).toFixed(1)}" cy="${cl(py + r(i + 13) * 70 - 35, 10, H - 10).toFixed(1)}" r="4" fill="#5aa9ff" opacity=".9"/>`);
+  }
+  const me = pen ? [W - 52, H / 2] : [px, py], ball = pen ? [W - 25, H / 2] : [cl(px + 9, 8, W - 8), cl(py + 4, 8, H - 8)];
+  return `<svg viewBox="0 0 ${W} ${H}"><rect width="${W}" height="${H}" fill="#0d1815"/>
+    <rect x="6" y="6" width="${W - 12}" height="${H - 12}" fill="none" stroke="${L}" stroke-width="1.5"/>
+    <line x1="${W / 2}" y1="6" x2="${W / 2}" y2="${H - 6}" stroke="${L}"/><circle cx="${W / 2}" cy="${H / 2}" r="16" fill="none" stroke="${L}"/>
+    <rect x="6" y="24" width="38" height="${H - 48}" fill="none" stroke="${L}"/><rect x="${W - 44}" y="24" width="38" height="${H - 48}" fill="none" stroke="${L}"/>
+    <rect x="6" y="40" width="14" height="${H - 80}" fill="none" stroke="${L}"/><rect x="${W - 20}" y="40" width="14" height="${H - 80}" fill="none" stroke="${L}"/>
+    <text x="12" y="19" font-size="8" fill="#3d6a5a" font-family="IBM Plex Sans Thai">ทิศบุก ➜</text>
+    <circle cx="10" cy="${H / 2}" r="4" fill="#5aa9ff"/><circle cx="${W - 10}" cy="${H / 2}" r="4" fill="#ff5c6c"/>
+    ${dots.join('')}
+    <circle cx="${me[0].toFixed(1)}" cy="${me[1].toFixed(1)}" r="10" fill="#2ee6a6" opacity=".2"><animate attributeName="r" values="8;15;8" dur="1.6s" repeatCount="indefinite"/></circle>
+    <circle cx="${me[0].toFixed(1)}" cy="${me[1].toFixed(1)}" r="5.5" fill="#2ee6a6"/>
+    <circle cx="${ball[0].toFixed(1)}" cy="${ball[1].toFixed(1)}" r="2.8" fill="#fff"/></svg>`;
+}
+function decorateEvent(min, pen) {
+  const sc = pen ? null : evFind(usedScen[usedScen.length - 1]);
+  const z = pen ? { x: .8, y: .5, t: 'atk' } : evZone(sc && sc.id);
+  const tag = $id('evTag'); tag.textContent = pen ? 'จุดโทษ' : z.t === 'atk' ? 'บุก' : z.t === 'def' ? 'รับ' : 'กลางสนาม';
+  tag.className = 'ev-tag' + (!pen && z.t === 'def' ? ' def' : '');
+  $id('evMin').textContent = min + "'";
+  const d = homeScore - awayScore; $id('evScore').textContent = `${d > 0 ? 'นำ' : d < 0 ? 'ตามหลัง' : 'เสมอ'} ${homeScore}-${awayScore}`;
+  if (sc) { $id('decTitle').textContent = sc.title; $id('decDesc').textContent = sc.desc; } else $id('decTitle').textContent = 'จุดโทษ! เลือกมุมที่จะยิง';
+  $id('evPitch').innerHTML = evPitchSVG(z, pen ? 'pen' : (sc ? sc.id : 'x'), pen);
+  const lbl = P.pos === 'GK' ? EV_LBL_GK : EV_LBL;
+  $id('decChoices').innerHTML = curChoices.map((c, i) => `<button type="button" class="ev-card" onclick="makeChoice(${i})"><div class="ev-ct"><span class="ic">${EV_ICONS[c.pen ? 'sh' : c.st] || EV_ICONS.sh}</span><small>${c.pen ? c.where : (lbl[c.st] || '')}</small></div><span>${c.t}</span></button>`).join('');
+  const vc = document.querySelector('.view-container'); if (vc) vc.scrollTop = 0;
+}
+const _tpd = triggerPlayerDecision;
+triggerPlayerDecision = function (min) { _tpd(min); try { decorateEvent(min, false); } catch (e) { console.error(e); } };
+const _pcs = penaltyChoices;
+penaltyChoices = function (min) { _pcs(min); try { decorateEvent(min, true); } catch (e) { console.error(e); } };
+
+function evBanner(msg) {
+  let t = null, k = '';
+  if (msg.startsWith('⚽ GOAL!')) { t = 'GOAL!'; k = 'goal'; }
+  else if (msg.startsWith('🚨 GOAL!')) { t = 'เสียประตู'; k = 'bad'; }
+  else if (msg.startsWith('🧤 ผู้รักษาประตูเซฟจุดโทษ')) { t = 'เซฟ!'; k = 'bad'; }
+  else if (msg.startsWith('❌')) { t = 'พลาด'; k = 'bad'; }
+  else if (msg.startsWith('✅')) { t = 'สำเร็จ'; k = 'ok'; }
+  else if (msg.startsWith('🟨')) { t = 'ใบเหลือง'; k = 'yellow'; }
+  else if (msg.startsWith('🟥')) { const opp = msg.includes('คู่แข่ง'); t = opp ? 'ใบแดงคู่แข่ง' : 'ใบแดง'; k = opp ? 'ok' : 'bad'; }
+  if (!t) return;
+  const area = $id('liveStreamArea'); if (!area) return;
+  area.querySelectorAll('.ev-banner').forEach(e => e.remove());
+  const el = document.createElement('div'); el.className = 'ev-banner ' + k; el.append(document.createTextNode(t));
+  const sub = document.createElement('small'); sub.textContent = msg.replace(/^[^A-Za-z0-9ก-๙]+/, '').replace(/^(GOAL!|สำเร็จ!|ปลอดภัย!|พลาด!)\s*/, '').slice(0, 56);
+  el.append(sub); area.appendChild(el); setTimeout(() => el.remove(), 1950);
+}
+addMatchLog = function (min, msg, type = 'log') {
+  const box = $id('matchLogBox'), div = document.createElement('div');
+  div.className = `log-item ${type}`;
+  div.innerHTML = `<span class="lm">${min}</span><span class="lt">${msg}</span>`;
+  box.prepend(div);
+  try { evBanner(msg); } catch (e) { console.error(e); }
+};
 </script>
 
 </body>
