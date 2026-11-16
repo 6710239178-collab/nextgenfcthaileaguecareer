@@ -1574,6 +1574,8 @@ function renderTrophies() {
 
 /* ===== โลโก้สโมสร: ใช้รูปที่ผู้เล่นใส่เองในโฟลเดอร์ logos/ ถ้าไม่มีรูปใช้ตราย่อเดิม ===== */
 const LOGO_SLUGS = {"บุรีรัมย์ ยูไนเต็ด": "buriram-united", "บีจี ปทุม ยูไนเต็ด": "bg-pathum-united", "ทรู แบงค็อก ยูไนเต็ด": "true-bangkok-united", "การท่าเรือ เอฟซี": "port-fc", "เมืองทอง ยูไนเต็ด": "muangthong-united", "ชลบุรี เอฟซี": "chonburi-fc", "เชียงราย ยูไนเต็ด": "chiangrai-united", "ราชบุรี เอฟซี": "ratchaburi-fc", "นครราชสีมา เอฟซี": "nakhon-ratchasima-fc", "อุทัยธานี เอฟซี": "uthai-thani-fc", "ขอนแก่น ยูไนเต็ด": "khonkaen-united", "สุโขทัย เอฟซี": "sukhothai-fc", "ลำพูน วอร์ริเออร์": "lamphun-warrior", "ประจวบ เอฟซี": "prachuap-fc", "ตราด เอฟซี": "trat-fc", "ระยอง เอฟซี": "rayong-fc", "อ่างทอง เอฟซี": "angthong-fc", "อุดรธานี เอฟซี": "udon-thani-fc", "เชียงราย ซิตี้": "chiangrai-city", "สมุทรปราการ ซิตี้": "samut-prakan-city", "นครศรี ยูไนเต็ด": "nakhon-si-united", "ลพบุรี เอฟซี": "lopburi-fc", "พัทลุง เอฟซี": "phatthalung-fc", "หนองบัวพิชญะ": "nongbua-pitchaya", "สุพรรณบุรี เอฟซี": "suphanburi-fc", "นครปฐม ยูไนเต็ด": "nakhon-pathom-united", "ทีมชาติไทย": "thailand"};
+Object.assign(LOGO_SLUGS, {'ทีมชาติไทย':'thailand','ฟิลิปปินส์':'philippines','ลาว':'laos','เวียดนาม':'vietnam','มาเลเซีย':'malaysia','อินโดนีเซีย':'indonesia','สิงคโปร์':'singapore','เมียนมา':'myanmar'});
+const NAT_CODE = {'ทีมชาติไทย':'THA','ฟิลิปปินส์':'PHI','ลาว':'LAO','เวียดนาม':'VIE','มาเลเซีย':'MAS','อินโดนีเซีย':'IDN','สิงคโปร์':'SGP','เมียนมา':'MYA'};
 const LOGO_EXTS = ['png', 'webp', 'jpg', 'svg'];
 const logoState = {};
 function logoOk(img) { logoState[img.dataset.n] = img.getAttribute('src'); }
@@ -2285,7 +2287,7 @@ function nextNatMatch() {
     team: { name: 'ทีมชาติไทย', squad: st.squad.map(x => ({ n: x.n, r: x.r, w: x.r === 'FW' ? 4 : x.r === 'MF' ? 2 : 0.7 })) } };
   currentOpponent = { name: op.n, rating: op.r, noNames: op.n !== 'เวียดนาม', squad: VN_NAMES.map(n => ({ n, r: 'FW', w: 1 })) };
   document.getElementById('homeName').textContent = 'ทีมชาติไทย'; document.getElementById('awayName').textContent = op.n;
-  setBadge('homeBadge', 'ทีมชาติไทย', 'THA'); setBadge('awayBadge', op.n, op.n.slice(0, 3));
+  setBadge('homeBadge', 'ทีมชาติไทย', 'THA'); setBadge('awayBadge', op.n, NAT_CODE[op.n] || op.n.slice(0, 3));
   gameModal(` ${cup.name} · ${stage}\nไทย พบ ${op.n} (เรตติ้ง ${op.r})\n\n${natMatch.starter ? ' คุณได้ลงเป็นตัวจริง' : ' คุณอยู่ตัวสำรอง รอโอกาสจากม้านั่ง'}`, [{ label: ' เริ่มแข่ง', cb: startLiveMatch }]);
 }
 function natSummary() {
