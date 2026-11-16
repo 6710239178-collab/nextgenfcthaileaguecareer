@@ -627,6 +627,7 @@ body{font-variant-numeric:tabular-nums;line-height:1.5;letter-spacing:0}
 
     <div id="step2" class="hidden">
       <div class="ptspill">แต้มที่เหลือให้แจก <b id="initPoints">22</b></div>
+      <div id="sigPick"></div>
       <div id="statAdjusters"></div>
       <button class="btn-gold" id="btnStartCareer" style="margin-top:16px;" disabled onclick="initCareer()"> กรุณาแจกแต้มให้หมด</button>
       <button class="btn-blue" style="margin-top:8px;" onclick="goStep(1)">← กลับไปแก้ตัวตน</button>
@@ -1118,7 +1119,7 @@ function capsFor(pos, pot) {
   }
   return _capC[key] = c;
 }
-function attrCap(k, pos) { const i = CAP_KEYS.indexOf(k); return i < 0 ? 99 : capsFor(pos || P.pos, P.potential)[i]; }
+function attrCap(k, pos) { const i = CAP_KEYS.indexOf(k); if (i < 0) return 99; const cs = capsFor(pos || P.pos, P.potential), b = cs[i]; return (P.sig || []).includes(k) ? Math.max(b, ...cs) : b; }
 function calcOvr(a, pos){ const w = OVR_W[pos], av = (a.pace + a.shooting + a.passing + a.defending) / 4, cm = a.composure ?? av, ph = a.physical ?? av; return Math.round(a.pace*w[0] + a.shooting*w[1] + a.passing*w[2] + a.defending*w[3] + cm*w[4] + ph*w[5]); }
 function meLabel() { return P.name + (!natMatch && isStarPlayer(matchGoals) ? ' ★' : ''); }
 function isStarPlayer(extra) {
@@ -1285,13 +1286,14 @@ function initCareer() {
     role: "สำรองอคาเดมี่",
     fitness: 100, coachTrust: 15, injuredWeeks: 0, movedSeason: 0, contractEnd: 0, potential: Math.max(70 + Math.floor(Math.random()*23), Math.max(...Object.values(tempStats)) + 5),
     wage: 2000, marketValue: 150000, bankBalance: 0,
-    attrs: { ...tempStats },
+    attrs: { ...tempStats }, sig: (typeof newSig !== 'undefined' ? newSig.slice() : []), sigSeason: currentSeason,
     stats: { apps: 0, goals: 0, assists: 0 },
     season: { apps: 0, goals: 0, assists: 0 }
   };
 
   document.getElementById('creatorScreen').classList.add('hidden');
   document.getElementById('gameDashboard').classList.remove('hidden');
+  try { newSig = []; } catch (e) {}
 
   updateDashboardUI();
   prepareNextMatch();
@@ -1397,7 +1399,7 @@ function doWeeklyTraining() {
   let msg = ` ซ้อมเสร็จสิ้น (ฟิต -${cfg.c}%) แต่ครั้งนี้ยังไม่เห็นพัฒนาการ`;
   if (Math.random() < chance) {
     const f = document.getElementById('trainFocus').value;
-    const pool = POS_STATS[P.pos], allK = Object.keys(P.attrs), open = a => a.filter(x => P.attrs[x] < attrCap(x));
+    const pool = [...POS_STATS[P.pos], ...(P.sig || []), ...(P.sig || [])], allK = Object.keys(P.attrs), open = a => a.filter(x => P.attrs[x] < attrCap(x));
     let k;
     if (f !== 'auto' && Math.random() < 0.8) k = f;
     else { const c = open(Math.random() < 0.92 ? pool : allK); k = c.length ? c[Math.floor(Math.random() * c.length)] : (open(allK)[0] || pool[0]); }
@@ -3072,6 +3074,8 @@ applyLabels = function () {
   [['Pace','pace'],['Shooting','shooting'],['Passing','passing'],['Defending','defending'],['Composure','composure'],['Physical','physical']].forEach(([a, k]) => { $id('pv' + a).previousElementSibling.textContent = STAT_LABELS[k].split(' (')[0]; });
 };
 renderAdjusters = function () {
+  $id('sigPick').innerHTML = remainingInitPoints > 0 ? '' : `<div class="lbl" style="margin:14px 0 6px">เลือกค่าพลังเด่น 2 ค่า</div><p class="muted-p" style="margin-bottom:8px;">ค่าที่เลือกจะฝึกได้จนตัน เท่ากับค่าหลักของตำแหน่ง เช่น กองกลางที่อยากนิ่งเป็นพิเศษ เลือกแล้วเปลี่ยนไม่ได้จนจบปีแรก</p><div class="pl-chips" style="flex-wrap:wrap;margin-bottom:14px">${Object.keys(tempStats).map(k => `<button type="button" class="${newSig.includes(k) ? 'on' : ''}" onclick="newSigToggle('${k}')">${STAT_LABELS[k].split(' (')[0]}</button>`).join('')}</div>`;
+  { const b = $id('btnStartCareer'); if (b && remainingInitPoints === 0 && newSig.length < 2) { b.disabled = true; b.textContent = `เลือกค่าพลังเด่นให้ครบ 2 ค่า (เลือกแล้ว ${newSig.length})`; } }
   $id('statAdjusters').innerHTML = Object.keys(tempStats).map(k => `
     <div class="adj"><div class="adj-top"><span>${STAT_LABELS[k]}</span><b>${tempStats[k]}</b></div>
     <div class="adj-row"><button class="btn-step" onclick="adjustStat('${k}', -1)">−</button><div class="bar"><i style="width:${tempStats[k]}%"></i></div><button class="btn-step" onclick="adjustStat('${k}', 1)">+</button></div></div>`).join('');
@@ -3084,6 +3088,8 @@ updatePreview = function () {
   document.querySelectorAll('.age-chip').forEach(b => b.classList.toggle('on', b.dataset.a === age));
   $id('prevRing').style.setProperty('--p', Math.min(99, calcOvr(tempStats, pos)));
 };
+let newSig = [];
+function newSigToggle(k) { const i = newSig.indexOf(k); if (i >= 0) newSig.splice(i, 1); else if (newSig.length < 2) newSig.push(k); else { alert('เลือกจุดเด่นได้สูงสุด 2 ค่า'); return; } renderAdjusters(); }
 function pickPos(p) { $id('inPos').value = p; onPosChange(); }
 function pickAge(a) { $id('inAge').value = a; updatePreview(); }
 function goStep(n) {
@@ -3704,11 +3710,18 @@ function respecAdj(k, d) {
 }
 function respecAuto() {
   const r = P.respec; if (!r) return; r.tmp = { ...r.base };
-  const W = OVR_W[P.pos], order = RS_KEYS.map((k, i) => [k, W[i]]).sort((a, b) => b[1] - a[1]).map(x => x[0]);
+  const W = OVR_W[P.pos], order = RS_KEYS.map((k, i) => [k, W[i] + ((P.sig || []).includes(k) ? 1 : 0)]).sort((a, b) => b[1] - a[1]).map(x => x[0]);
   let left = r.pool;
   while (left > 0) { const k = order.find(x => r.tmp[x] < rsMax(r, x)); if (!k) break; r.tmp[k]++; left--; }
   renderRespec();
 }
+function sigToggle(k) {
+  if (P.sigSeason === currentSeason) { alert('ปีนี้เลือกจุดเด่นไปแล้ว เปลี่ยนได้ปีหน้า'); return; }
+  const d = (P.sigDraft || P.sig || []).slice(), i = d.indexOf(k);
+  if (i >= 0) d.splice(i, 1); else if (d.length >= 2) { alert('เลือกจุดเด่นได้สูงสุด 2 ค่า'); return; } else d.push(k);
+  P.sigDraft = d; renderRespec();
+}
+function sigSave() { P.sig = P.sigDraft || P.sig || []; P.sigDraft = null; P.sigSeason = currentSeason; alert('บันทึกจุดเด่นแล้ว'); updateDashboardUI(); }
 function respecCancel() { P.respec = null; updateDashboardUI(); }
 function respecConfirm() {
   const r = P.respec; if (!r || rsUsed(r) < r.pool) return;
@@ -3720,11 +3733,13 @@ function respecConfirm() {
 function renderRespec() {
   const el = document.getElementById('respecBody'); if (!el || !P) return;
   const hint = document.getElementById('trainHint');
-  if (hint) hint.textContent = 'ซ้อมอัตโนมัติสำหรับ ' + P.pos + ' ' + POS_TH[P.pos] + ': เน้น ' + [...new Set(POS_STATS[P.pos])].map(shortLab).join(' · ');
+  if (hint) hint.textContent = 'ซ้อมอัตโนมัติสำหรับ ' + P.pos + ' ' + POS_TH[P.pos] + ': เน้น ' + [...new Set([...POS_STATS[P.pos], ...(P.sig || [])])].map(shortLab).join(' · ') + ((P.sig || []).length ? ' (จุดเด่น: ' + P.sig.map(shortLab).join(', ') + ')' : '');
   const r = P.respec;
   if (!r) {
     const used = P.respecSeason === currentSeason;
-    el.innerHTML = `<p class="muted-p" style="margin-bottom:10px;">ซ้อมมาไม่ตรงบทบาท? รีเซ็ตค่าพลังเป็นค่าเริ่มต้นของ ${P.pos} แล้วจัดสรรแต้มคืนเองได้ แต่ละค่าใส่ได้ไม่เกินเพดานของตำแหน่ง${used ? '<br>ปีนี้ใช้สิทธิ์ไปแล้ว' : ''}</p><button class="btn-blue" ${used ? 'disabled' : ''} onclick="respecStart()">รีเซ็ตค่าพลัง</button>`;
+    const sg = P.sigDraft || P.sig || [], sigLocked = P.sigSeason === currentSeason, dirty = !!P.sigDraft;
+    const sigBox = `<div style="margin-bottom:14px"><div class="lbl" style="margin-bottom:6px">จุดเด่น (เลือกได้ 2 ค่า)</div><p class="muted-p" style="margin-bottom:8px;">ค่าที่เลือกจะฝึกได้จนตัน เท่ากับค่าหลักของตำแหน่ง และโค้ชจะเน้นซ้อมให้บ่อยขึ้น เช่น กลางรับที่อยากมีความเร็ว หรือ เบอร์ 8 ที่อยากนิ่งขึ้น${sigLocked ? '<br>ปีนี้เลือกไปแล้ว เปลี่ยนได้ปีหน้า' : ''}</p><div class="pl-chips" style="flex-wrap:wrap">${RS_KEYS.map(k => `<button type="button" class="${sg.includes(k) ? 'on' : ''}" onclick="sigToggle('${k}')">${shortLab(k)} (${attrCap(k)})</button>`).join('')}</div>${dirty ? '<button class="btn-gold" style="margin-top:10px" onclick="sigSave()">ยืนยันจุดเด่น</button>' : ''}</div>`;
+    el.innerHTML = sigBox + `<p class="muted-p" style="margin-bottom:10px;">ซ้อมมาไม่ตรงบทบาท? รีเซ็ตค่าพลังเป็นค่าเริ่มต้นของ ${P.pos} แล้วจัดสรรแต้มคืนเองได้ แต่ละค่าใส่ได้ไม่เกินเพดานของตำแหน่ง${used ? '<br>ปีนี้ใช้สิทธิ์ไปแล้ว' : ''}</p><button class="btn-blue" ${used ? 'disabled' : ''} onclick="respecStart()">รีเซ็ตค่าพลัง</button>`;
     return;
   }
   const left = r.pool - rsUsed(r), after = calcOvr(r.tmp, P.pos);
