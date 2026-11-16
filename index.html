@@ -773,10 +773,15 @@ body{font-variant-numeric:tabular-nums;line-height:1.5;letter-spacing:0}
           <p class="muted-p" style="margin-bottom:12px;">เลือกซ้อมหรือพักอย่างใดอย่างหนึ่ง ก่อนจะลงแข่งได้ ฟิตต่ำหรือสโมสรเล็กจะพัฒนาช้าลง</p>
           <label class="lbl">โฟกัสค่าพลัง</label>
           <select id="trainFocus" class="form-select" style="margin-bottom:10px"></select>
+          <div class="muted-p" id="trainHint" style="margin-bottom:12px;"></div>
           <label class="lbl">ความหนัก</label>
           <select id="trainInt" class="form-select" style="margin-bottom:14px"><option value="light"> เบา (ฟิต -10%)</option><option value="normal" selected> ปกติ (ฟิต -20%)</option><option value="heavy"> หนัก (ฟิต -35% มีโอกาสบาดเจ็บ)</option></select>
           <button class="btn-gold" id="btnDoTrain" onclick="doWeeklyTraining()"> เข้าซ้อมสัปดาห์นี้</button>
           <button class="btn-blue" id="btnDoRest" style="margin-top:8px;" onclick="restPlayer()"> พักฟื้น (+30% ฟิต · นับว่าไม่ได้ซ้อม)</button>
+        </div>
+        <div class="card" id="respecCard">
+          <div class="card-header"><div class="card-title">รีเซ็ตและจัดสรรค่าพลังใหม่</div></div>
+          <div id="respecBody"></div>
         </div>
         <div class="card" id="posCard">
           <div class="card-header"><div class="card-title">คุยกับโค้ชเรื่องตำแหน่ง</div></div>
@@ -1099,14 +1104,21 @@ let isHome = true;
 let agentOfferYears = 1;
 let agentOfferPro = false;
 const ROLE_WAGE = {"สำรองอคาเดมี่":2000,"ตัวจริงเยาวชน":4000,"ดาวรุ่งชุดใหญ่":30000,"ตัวจริง":80000,"กัปตันทีม":150000};
-const POS_STATS = { ST:['shooting','shooting','pace','composure','physical'], LW:['pace','shooting','shooting','passing','composure'], RW:['pace','shooting','shooting','passing','composure'], CAM:['passing','passing','shooting','composure','pace'], CM:['passing','defending','physical','composure','passing'], CDM:['defending','defending','physical','passing','pace'], CB:['defending','defending','physical','passing','composure'], LB:['pace','defending','physical','passing','defending'], RB:['pace','defending','physical','passing','defending'], GK:['shooting','defending','composure','physical','shooting'] };
+const POS_STATS = { ST:['shooting','shooting','pace','composure','physical'], LW:['pace','shooting','shooting','passing','composure'], RW:['pace','shooting','shooting','passing','composure'], CAM:['passing','passing','shooting','composure','pace','shooting'], CM:['passing','passing','defending','physical','composure','pace'], CDM:['defending','defending','defending','physical','physical','passing'], CB:['defending','defending','physical','passing','composure'], LB:['pace','defending','physical','passing','defending'], RB:['pace','defending','physical','passing','defending'], GK:['shooting','defending','composure','physical','shooting'] };
 const OVR_W = { ST:[.22,.33,.12,.03,.15,.15], LW:[.28,.2,.2,.05,.12,.15], RW:[.28,.2,.2,.05,.12,.15], CAM:[.12,.22,.32,.05,.17,.12], CM:[.12,.12,.27,.2,.12,.17], CDM:[.1,.05,.22,.3,.1,.23], LB:[.25,.05,.2,.25,.08,.17], RB:[.25,.05,.2,.25,.08,.17], CB:[.15,.05,.15,.33,.1,.22], GK:[.22,.26,.08,.24,.1,.1] };
-function attrCap(k, pos) {
-  pos = pos || P.pos;
-  const keys = ['pace','shooting','passing','defending','composure','physical'], w = (OVR_W[pos] || [])[keys.indexOf(k)];
-  const x = w === undefined ? .1 : w, off = x >= .2 ? 0 : x >= .12 ? 5 : x >= .08 ? 12 : x >= .05 ? 18 : 24;
-  return Math.max(40, Math.min(99, P.potential - off));
+const _capC = {}, CAP_KEYS = ['pace', 'shooting', 'passing', 'defending', 'composure', 'physical'];
+function capsFor(pos, pot) {
+  const key = pos + '|' + pot; if (_capC[key]) return _capC[key];
+  const W = OVR_W[pos] || [], mx = Math.max(...W, .1), off = CAP_KEYS.map((k, i) => W[i] === undefined ? 15 : Math.round((mx - W[i]) / mx * 40));
+  let c;
+  for (let b = 0; b <= 45; b++) {
+    c = off.map(o => Math.max(40, Math.min(99, pot + b - o)));
+    const a = {}; CAP_KEYS.forEach((k, i) => a[k] = c[i]);
+    if (calcOvr(a, pos) >= pot) break;
+  }
+  return _capC[key] = c;
 }
+function attrCap(k, pos) { const i = CAP_KEYS.indexOf(k); return i < 0 ? 99 : capsFor(pos || P.pos, P.potential)[i]; }
 function calcOvr(a, pos){ const w = OVR_W[pos], av = (a.pace + a.shooting + a.passing + a.defending) / 4, cm = a.composure ?? av, ph = a.physical ?? av; return Math.round(a.pace*w[0] + a.shooting*w[1] + a.passing*w[2] + a.defending*w[3] + cm*w[4] + ph*w[5]); }
 function meLabel() { return P.name + (!natMatch && isStarPlayer(matchGoals) ? ' ★' : ''); }
 function isStarPlayer(extra) {
@@ -1116,7 +1128,7 @@ function isStarPlayer(extra) {
   return g >= 3 && g >= top;
 }
 const POS_ADJ = { ST: ['LW', 'RW', 'CAM'], LW: ['ST', 'RW', 'CAM', 'LB'], RW: ['ST', 'LW', 'CAM', 'RB'], CAM: ['ST', 'LW', 'RW', 'CM'], CM: ['CAM', 'CDM'], CDM: ['CM', 'CB'], CB: ['CDM', 'LB', 'RB'], LB: ['CB', 'LW', 'RB'], RB: ['CB', 'RW', 'LB'], GK: [] };
-const POS_TH = { ST: 'กองหน้า', LW: 'ปีกซ้าย', RW: 'ปีกขวา', CAM: 'กองกลางตัวรุก', CM: 'กองกลาง', CDM: 'กองกลางตัวรับ', LB: 'แบ็กซ้าย', RB: 'แบ็กขวา', CB: 'กองหลังตัวกลาง', GK: 'ผู้รักษาประตู' };
+const POS_TH = { ST: 'กองหน้า', LW: 'ปีกซ้าย', RW: 'ปีกขวา', CAM: 'กลางรุก เบอร์ 10', CM: 'กองกลาง เบอร์ 8', CDM: 'กลางรับ เบอร์ 6 สายตัดบอล', LB: 'แบ็กซ้าย', RB: 'แบ็กขวา', CB: 'กองหลังตัวกลาง', GK: 'ผู้รักษาประตู' };
 function goalKind(t) { return /โหม่ง/.test(t) ? 'head' : /ยิงไกล|จากนอกเขตโทษ|จากขอบเขตโทษ/.test(t) ? 'long' : ''; }
 function styleOf() { return P.style = P.style || { g: 0, head: 0, long: 0 }; }
 function styleBonus(to) {
@@ -1133,7 +1145,7 @@ function posCooldownMsg() {
 function renderPosChange() {
   const sel = document.getElementById('posSel'); if (!sel) return;
   const cur = ovrOf(), opts = POS_ADJ[P.pos] || [], keep = sel.value;
-  sel.innerHTML = opts.map(t => { const o = calcOvr(P.attrs, t); return `<option value="${t}">${t} ${POS_TH[t]} · OVR ที่ตำแหน่งนี้ ${o} (${o >= cur ? '+' : ''}${o - cur})</option>`; }).join('');
+  sel.innerHTML = opts.map(t => { const o = ovrAs(t); return `<option value="${t}">${t} ${POS_TH[t]} · OVR ที่ตำแหน่งนี้ ${o} (${o >= cur ? '+' : ''}${o - cur})</option>`; }).join('');
   if (opts.includes(keep)) sel.value = keep;
   const cd = posCooldownMsg();
   let info = `ตำแหน่งตอนนี้: ${P.pos} ${POS_TH[P.pos]} (OVR ${cur})`;
@@ -1155,7 +1167,7 @@ function requestPosChange() {
   const to = document.getElementById('posSel').value;
   if (!to || posCooldownMsg() || !(POS_ADJ[P.pos] || []).includes(to)) return;
   P.posReq = currentSeason;
-  const cur = ovrOf(), nw = calcOvr(P.attrs, to), wide = ['LW', 'RW'].includes(P.pos), atk = ['ST', 'CAM'].includes(to), sb = styleBonus(to);
+  const cur = ovrOf(), nw = ovrAs(to), wide = ['LW', 'RW'].includes(P.pos), atk = ['ST', 'CAM'].includes(to), sb = styleBonus(to);
   if (nw < cur - 6) { alert(` โค้ชปฏิเสธ\nค่าพลังของคุณยังไม่เหมาะกับตำแหน่ง ${to} ${POS_TH[to]} (OVR ที่ตำแหน่งนั้น ${nw} ต่ำกว่าตำแหน่งปัจจุบัน ${cur} มาก)\n\nฝึกซ้อมค่าพลังที่ตำแหน่งนั้นต้องการก่อน แล้วค่อยมาขอใหม่ปีหน้า`); renderPosChange(); return; }
   const chance = Math.max(0.05, Math.min(0.9, 0.35 + (nw - cur) * 0.04 + (P.age >= 29 ? 0.2 : 0) + (P.coachTrust >= 60 ? 0.1 : 0) + (wide && atk && P.season.goals >= 6 ? 0.15 : 0) + sb.b));
   if (Math.random() < chance) {
@@ -1167,12 +1179,13 @@ function coachSuggestPos() {
   const opts = POS_ADJ[P.pos] || [];
   if (!opts.length || (P.posLast && currentSeason - P.posLast < 2)) return;
   const cur = ovrOf(); let best = null, bo = 0, why = '', bb = 0;
-  if (P.age >= 22) opts.forEach(t => { const sb = styleBonus(t), o = calcOvr(P.attrs, t); if (sb.b > bb && o >= cur - 3) { bb = sb.b; best = t; bo = o; why = 'โค้ชสังเกตสไตล์การเล่นของคุณ: ' + sb.why; } });
-  if (!best && P.age >= 30) { bo = cur + 1; opts.forEach(t => { const o = calcOvr(P.attrs, t); if (o > bo) { bo = o; best = t; } }); if (best) why = `อายุ ${P.age} ปี สภาพร่างกายเปลี่ยนไป`; }
+  if (P.age >= 22) opts.forEach(t => { const sb = styleBonus(t), o = ovrAs(t); if (sb.b > bb && o >= cur - 3) { bb = sb.b; best = t; bo = o; why = 'โค้ชสังเกตสไตล์การเล่นของคุณ: ' + sb.why; } });
+  if (!best && P.age >= 30) { bo = cur + 1; opts.forEach(t => { const o = ovrAs(t); if (o > bo) { bo = o; best = t; } }); if (best) why = `อายุ ${P.age} ปี สภาพร่างกายเปลี่ยนไป`; }
   if (!best) return;
   gameConfirm(` โค้ชเรียกคุยหลังจบฤดูกาล\n${why}\nโค้ชเห็นว่าคุณเหมาะกับตำแหน่ง ${best} ${POS_TH[best]}\n(OVR ${cur} → ${bo})\n\nต้องการย้ายตำแหน่งไหม?`, ' ตกลง ย้ายตำแหน่ง', ' ขอเล่นที่เดิมต่อ', () => applyPosChange(best, true), () => { P.posLast = currentSeason - 1; });
 }
-function ovrOf(){ return calcOvr(P.attrs, P.pos); }
+function ovrAs(pos) { return calcOvr(P.attrs, pos); }
+function ovrOf(){ return ovrAs(P.pos); }
 function clubRating(){ if (natMatch) return 63; const t=leagueTeams.find(x=>x.name===P.club); return t?t.rating:65; }
 
 const LIFESTYLE_STORE = [
@@ -1387,7 +1400,7 @@ function doWeeklyTraining() {
     const pool = POS_STATS[P.pos], allK = Object.keys(P.attrs), open = a => a.filter(x => P.attrs[x] < attrCap(x));
     let k;
     if (f !== 'auto' && Math.random() < 0.8) k = f;
-    else { const c = open(Math.random() < 0.8 ? pool : allK); k = c.length ? c[Math.floor(Math.random() * c.length)] : (open(allK)[0] || pool[0]); }
+    else { const c = open(Math.random() < 0.92 ? pool : allK); k = c.length ? c[Math.floor(Math.random() * c.length)] : (open(allK)[0] || pool[0]); }
     const cap = attrCap(k), room = cap - P.attrs[k];
     let amt = (P.age <= 23 ? 2 : 1) + ((lv === 'heavy' && Math.random() < 0.4) ? 1 : 0);
     if (room <= 8) amt = 1;
@@ -1600,6 +1613,24 @@ function buildFixtures() {
   fixtures = first.map(n => ({ n, h: hm[n] })).concat(second.map(n => ({ n, h: !hm[n] })));
   fixKey = currentSeason + '|' + P.club + '|' + (isFirstTeam() ? 'F' : 'Y');
 }
+function oppNameAt(w) {
+  if (w < 1 || w > 30) return null;
+  if (w % 6 === 0 && w <= 24 && (cupAlive || w < currentWeek)) {
+    try { cupEnsure(); const tie = cup.r[w / 6 - 1] && cup.r[w / 6 - 1].find(t => t.a === P.club || t.b === P.club); if (tie) return tie.a === P.club ? tie.b : tie.a; } catch (e) {}
+  }
+  const f = fixtures[(w - 1) % fixtures.length]; return f ? f.n : null;
+}
+function dedupeFixture() {
+  const L = fixtures.length, i = (currentWeek - 1) % L, bad = new Set([oppNameAt(currentWeek - 1), oppNameAt(currentWeek + 1)].filter(Boolean));
+  if (!bad.has(fixtures[i].n)) return;
+  const adj = p => [p - 1, p + 1].every(q => !fixtures[q] || fixtures[q].n !== fixtures[p].n);
+  for (let j = i + 1; j < L; j++) {
+    if (bad.has(fixtures[j].n)) continue;
+    [fixtures[i], fixtures[j]] = [fixtures[j], fixtures[i]];
+    if (adj(i) && adj(j) && !bad.has(fixtures[i].n)) return;
+    [fixtures[i], fixtures[j]] = [fixtures[j], fixtures[i]];
+  }
+}
 function prepareNextMatch() {
   isCupMatch = false;
 
@@ -1609,6 +1640,7 @@ function prepareNextMatch() {
   }
 
   if (!fixtures.length || fixKey !== currentSeason + '|' + P.club + '|' + (isFirstTeam() ? 'F' : 'Y')) buildFixtures();
+  if (!isCupMatch) { try { dedupeFixture(); } catch (e) { console.error(e); } }
   const fx = fixtures[(currentWeek - 1) % fixtures.length];
   currentOpponent = tbl().find(t => t.name === fx.n) || tbl().find(t => t.name !== P.club);
   isHome = fx.h;
@@ -1767,10 +1799,10 @@ const PEN_OPTS = [
 function penLeaders(t) { const sq = squadOf(t), sen = sq.filter(x => x.senior); return sen.length ? sen : sq.filter(x => x.r === 'FW').slice(0, 2); }
 function penName(pl, t) { return pl.n + (pl.senior && !youthTeams.includes(t) ? ' ★' : ''); }
 function pickPenaltyTaker(t) {
-  const lead = penLeaders(t), att = ['ST', 'LW', 'RW', 'CAM'].includes(P.pos), meOk = isPlayerOnField && !matchRed && isStarPlayer(matchGoals);
-  if (meOk && att) return { me: true };
+  const lead = penLeaders(t), att = ['ST', 'LW', 'RW', 'CAM'].includes(P.pos), meOk = isPlayerOnField && !matchRed && (isStarPlayer(matchGoals) || (P.season.goals + matchGoals >= 2 && ['ST', 'LW', 'RW', 'CAM', 'CM'].includes(P.pos) && P.role !== 'สำรองอคาเดมี่'));
+  if (meOk && att && (isStarPlayer(matchGoals) || Math.random() < 0.6)) return { me: true };
   const cands = lead.map(x => ({ pl: x, w: x.r === 'FW' ? 5 : x.r === 'MF' ? 3 : 1 }));
-  if (meOk) cands.push({ me: true, w: 2 });
+  if (meOk) cands.push({ me: true, w: 3 });
   let r = Math.random() * cands.reduce((a, c) => a + c.w, 0);
   for (const c of cands) { r -= c.w; if (r <= 0) return c; }
   return cands[0];
@@ -1820,7 +1852,7 @@ function penaltyShot(c) {
   matchTimer = setInterval(runMatchLoop, 500);
 }
 function simulateMinuteEvent(min) {
-  if (!natMatch && !matchRed && min >= 3 && min <= 88 && Math.random() < 0.0004) { triggerPenalty(min); return; }
+  if (!natMatch && !matchRed && min >= 3 && min <= 88 && Math.random() < 0.0016) { triggerPenalty(min); return; }
   if (isPlayerOnField && !matchRed && !farewell) {
     const dm = ['CB','CDM','LB','RB','CM'].includes(P.pos) ? 1.8 : 1;
     if (Math.random() < 0.0009 * dm) {
@@ -2378,6 +2410,8 @@ function advanceSeason() {
   currentSeason++; currentWeek = 1; P.age++;
   runPromotionRelegation();
   [leagueTeams, youthTeams, div2Teams].forEach(tb => tb.forEach(t => { t.p = t.w = t.d = t.l = t.pts = 0; t.gf = 0; t.ga = 0; if (t.squad) t.squad.forEach(pl => { pl.g = 0; pl.a = 0; pl.m = 0; }); if (t.gk) t.gk.cs = 0; t.rating = Math.max(50, Math.min(80, t.rating + Math.floor(Math.random() * 5) - 2)); }));
+  { const dec = []; Object.keys(P.attrs).forEach(k => { const ex = P.attrs[k] - attrCap(k); if (ex > 0) { const d = Math.min(ex, 2); P.attrs[k] -= d; dec.push(`${STAT_LABELS[k]} -${d}`); } });
+    if (dec.length) setTimeout(() => alert(` ค่าพลังที่เกินหน้าที่ของตำแหน่ง ${P.pos} เสื่อมลงเพราะไม่ได้ใช้\n${dec.join(' · ')}`), 0); }
   cupAlive = true; cup = null; P.season = { apps: 0, goals: 0, assists: 0, yellows: 0, reds: 0, rSum: 0, rN: 0 };
   alert(` จบฤดูกาล! เข้าสู่ปีที่ ${currentSeason} (อายุ ${P.age} ปี)`);
   if (P.age >= 26 && P.age <= 33) P.attrs.composure = Math.min(Math.max(P.attrs.composure || 50, attrCap('composure')), (P.attrs.composure || 50) + 1);
@@ -2831,6 +2865,11 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
 .cup-tbd{padding:12px;border:1px dashed var(--bg-card-border);border-radius:12px;color:var(--text-muted);font-size:12.5px;text-align:center}
 .cup-champ{margin:10px 0 0;padding:10px 12px;border-radius:12px;background:var(--mint-soft);color:var(--accent-gold);text-align:center}
 .pl-chips{flex-wrap:wrap}
+
+.rs-row{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;margin-bottom:10px;font-size:13px}.rs-row b{font:700 15px var(--font-title);color:var(--accent-gold)}
+.rs-ctl{display:flex;gap:4px}.rs-ctl button{min-width:34px;padding:6px 8px;border-radius:9px;border:1px solid var(--bg-card-border);background:#0e1319;color:#fff;font:700 12px var(--font-title);cursor:pointer}
+.rs-left{display:flex;justify-content:space-between;margin:8px 0 12px;padding:10px 12px;border-radius:12px;background:var(--mint-soft);color:var(--accent-gold);font-size:13px}
+.rs-btns{display:grid;gap:8px;margin-top:10px}
 </style>
 <script>
 /* ===== ระบบเหตุการณ์นอกสนาม (นักวิจารณ์ / สัมภาษณ์) — ไม่มีบัฟ ไม่กระทบสถิติ ไม่เก็บประวัติ ===== */
@@ -3639,6 +3678,63 @@ function renderSeasonStrip() {
 const _udA = updateDashboardUI;
 updateDashboardUI = function () { _udA.apply(this, arguments); try { renderSeasonStrip(); } catch (e) { console.error(e); } };
 
+
+/* ---------- รีเซ็ตค่าพลัง + ซ้อมตามบทบาทตำแหน่ง ---------- */
+const RS_KEYS = ['pace', 'shooting', 'passing', 'defending', 'composure', 'physical'];
+const shortLab = k => String(STAT_LABELS[k]).split(' (')[0];
+function rsUsed(r) { return RS_KEYS.reduce((a, k) => a + r.tmp[k] - r.base[k], 0); }
+function rsMax(r, k) { return Math.max(r.base[k], attrCap(k)); }
+function respecStart() {
+  if (P.respecSeason === currentSeason) { alert('ปีนี้รีเซ็ตไปแล้ว รอปีหน้าถึงจะรีเซ็ตได้อีก'); return; }
+  gameConfirm('รีเซ็ตค่าพลังทั้งหมดกลับเป็นค่าเริ่มต้นของตำแหน่ง ' + P.pos + '\nแล้วนำแต้มที่ได้คืนไปจัดสรรใหม่เองตามบทบาท\n\nทำได้ปีละ 1 ครั้ง และยกเลิกได้ก่อนกดยืนยันขั้นสุดท้าย', 'เริ่มรีเซ็ต', 'ไม่ทำ', () => {
+    const base = { ...POS_BASE[P.pos] };
+    const tot = RS_KEYS.reduce((a, k) => a + (P.attrs[k] || 0) - base[k], 0);
+    const room = RS_KEYS.reduce((a, k) => a + Math.max(0, attrCap(k) - base[k]), 0);
+    P.respec = { base, tmp: { ...base }, pool: Math.max(0, Math.min(tot, room)), got: Math.max(0, tot) };
+    updateDashboardUI();
+  });
+}
+function respecAdj(k, d) {
+  const r = P.respec; if (!r) return;
+  for (let i = 0; i < Math.abs(d); i++) {
+    if (d > 0) { if (r.pool - rsUsed(r) <= 0 || r.tmp[k] >= rsMax(r, k)) break; r.tmp[k]++; }
+    else { if (r.tmp[k] <= r.base[k]) break; r.tmp[k]--; }
+  }
+  renderRespec();
+}
+function respecAuto() {
+  const r = P.respec; if (!r) return; r.tmp = { ...r.base };
+  const W = OVR_W[P.pos], order = RS_KEYS.map((k, i) => [k, W[i]]).sort((a, b) => b[1] - a[1]).map(x => x[0]);
+  let left = r.pool;
+  while (left > 0) { const k = order.find(x => r.tmp[x] < rsMax(r, x)); if (!k) break; r.tmp[k]++; left--; }
+  renderRespec();
+}
+function respecCancel() { P.respec = null; updateDashboardUI(); }
+function respecConfirm() {
+  const r = P.respec; if (!r || rsUsed(r) < r.pool) return;
+  RS_KEYS.forEach(k => P.attrs[k] = r.tmp[k]);
+  P.respec = null; P.respecSeason = currentSeason;
+  alert('จัดสรรค่าพลังใหม่เรียบร้อย OVR ตอนนี้ ' + ovrOf());
+  updateDashboardUI();
+}
+function renderRespec() {
+  const el = document.getElementById('respecBody'); if (!el || !P) return;
+  const hint = document.getElementById('trainHint');
+  if (hint) hint.textContent = 'ซ้อมอัตโนมัติสำหรับ ' + P.pos + ' ' + POS_TH[P.pos] + ': เน้น ' + [...new Set(POS_STATS[P.pos])].map(shortLab).join(' · ');
+  const r = P.respec;
+  if (!r) {
+    const used = P.respecSeason === currentSeason;
+    el.innerHTML = `<p class="muted-p" style="margin-bottom:10px;">ซ้อมมาไม่ตรงบทบาท? รีเซ็ตค่าพลังเป็นค่าเริ่มต้นของ ${P.pos} แล้วจัดสรรแต้มคืนเองได้ แต่ละค่าใส่ได้ไม่เกินเพดานของตำแหน่ง${used ? '<br>ปีนี้ใช้สิทธิ์ไปแล้ว' : ''}</p><button class="btn-blue" ${used ? 'disabled' : ''} onclick="respecStart()">รีเซ็ตค่าพลัง</button>`;
+    return;
+  }
+  const left = r.pool - rsUsed(r), after = calcOvr(r.tmp, P.pos);
+  el.innerHTML = `<p class="muted-p" style="margin-bottom:8px;">ได้แต้มคืน ${r.got}${r.pool < r.got ? ` (ใส่ได้สูงสุด ${r.pool} ตามเพดานตำแหน่ง ${P.pos}${r.got - r.pool > 0 ? ' ส่วนที่เกินจะหายไป' : ''})` : ''}</p>`
+    + `<div class="rs-left"><span>แต้มคงเหลือ <b>${left}</b></span><span>OVR ${ovrOf()} → <b>${after}</b></span></div>`
+    + RS_KEYS.map(k => `<div class="rs-row"><div><span>${STAT_LABELS[k]}</span><div class="bar" style="margin-top:5px"><i style="width:${Math.min(100, r.tmp[k])}%"></i><u style="left:${rsMax(r, k)}%"></u></div></div><div style="text-align:right"><b>${r.tmp[k]}</b><small class="capn"> / ${rsMax(r, k)}</small><div class="rs-ctl" style="margin-top:4px"><button onclick="respecAdj('${k}',-5)">-5</button><button onclick="respecAdj('${k}',-1)">-1</button><button onclick="respecAdj('${k}',1)">+1</button><button onclick="respecAdj('${k}',5)">+5</button></div></div></div>`).join('')
+    + `<div class="rs-btns"><button class="btn-blue" onclick="respecAuto()">จัดให้อัตโนมัติตามบทบาทตำแหน่ง</button><button class="btn-gold" ${left > 0 ? 'disabled' : ''} onclick="respecConfirm()">${left > 0 ? 'ใช้แต้มให้ครบก่อนยืนยัน' : 'ยืนยัน'}</button><button class="btn-blue" onclick="respecCancel()">ยกเลิก</button></div>`;
+}
+const _udB = updateDashboardUI;
+updateDashboardUI = function () { _udB.apply(this, arguments); try { renderRespec(); } catch (e) { console.error(e); } };
 </script>
 </body>
 </html>
