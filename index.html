@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NEXTGEN FC 2.0</title>
-<link rel="icon" href="nextgenfc-logo.png">
+<link rel="icon" href="logos/nextgenfc-logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -593,7 +593,7 @@ body{font-variant-numeric:tabular-nums;line-height:1.5;letter-spacing:0}
         <button class="btn-red" style="margin-top:8px;" onclick="deleteSave()"> ลบเซฟและเริ่มใหม่</button>
       </div>
     </div>
-    <div class="brandmini"><span class="logo-mark"><img src="nextgenfc-logo.png" alt="" onload="this.parentNode.classList.add('has-img')" onerror="this.remove()">N</span>NEXTGEN FC <i>2.0</i></div>
+    <div class="brandmini"><span class="logo-mark"><img src="logos/nextgenfc-logo.png" alt="" onload="this.parentNode.classList.add('has-img')" onerror="if(!this.dataset.t){this.dataset.t=1;this.src='nextgenfc-logo.png'}else this.remove()">N</span>NEXTGEN FC <i>2.0</i></div>
     <h1>สร้างนักเตะของคุณ</h1>
     <p class="cr-sub">จากเด็กอคาเดมี่ สู่ไทยลีก 1</p>
 
@@ -650,7 +650,7 @@ body{font-variant-numeric:tabular-nums;line-height:1.5;letter-spacing:0}
 
   <div class="main-content">
     <div class="appbar">
-      <div class="brandmini"><span class="logo-mark"><img src="nextgenfc-logo.png" alt="" onload="this.parentNode.classList.add('has-img')" onerror="this.remove()">N</span>NEXTGEN FC <i>2.0</i></div>
+      <div class="brandmini"><span class="logo-mark"><img src="logos/nextgenfc-logo.png" alt="" onload="this.parentNode.classList.add('has-img')" onerror="if(!this.dataset.t){this.dataset.t=1;this.src='nextgenfc-logo.png'}else this.remove()">N</span>NEXTGEN FC <i>2.0</i></div>
       <div class="pills">
         <span class="pill">ฟิต <b id="hudFitness">100%</b></span>
         <span class="pill"><b id="hudWeek">ปี 1 (1/30)</b></span>
@@ -1094,12 +1094,19 @@ let agentHired = false;
 let agentOfferPending = null;
 let agentOfferWage = 0;
 let cupAlive = true;
+let cup = null;
 let isHome = true;
 let agentOfferYears = 1;
 let agentOfferPro = false;
 const ROLE_WAGE = {"สำรองอคาเดมี่":2000,"ตัวจริงเยาวชน":4000,"ดาวรุ่งชุดใหญ่":30000,"ตัวจริง":80000,"กัปตันทีม":150000};
 const POS_STATS = { ST:['shooting','shooting','pace','composure','physical'], LW:['pace','shooting','shooting','passing','composure'], RW:['pace','shooting','shooting','passing','composure'], CAM:['passing','passing','shooting','composure','pace'], CM:['passing','defending','physical','composure','passing'], CDM:['defending','defending','physical','passing','pace'], CB:['defending','defending','physical','passing','composure'], LB:['pace','defending','physical','passing','defending'], RB:['pace','defending','physical','passing','defending'], GK:['shooting','defending','composure','physical','shooting'] };
 const OVR_W = { ST:[.22,.33,.12,.03,.15,.15], LW:[.28,.2,.2,.05,.12,.15], RW:[.28,.2,.2,.05,.12,.15], CAM:[.12,.22,.32,.05,.17,.12], CM:[.12,.12,.27,.2,.12,.17], CDM:[.1,.05,.22,.3,.1,.23], LB:[.25,.05,.2,.25,.08,.17], RB:[.25,.05,.2,.25,.08,.17], CB:[.15,.05,.15,.33,.1,.22], GK:[.22,.26,.08,.24,.1,.1] };
+function attrCap(k, pos) {
+  pos = pos || P.pos;
+  const keys = ['pace','shooting','passing','defending','composure','physical'], w = (OVR_W[pos] || [])[keys.indexOf(k)];
+  const x = w === undefined ? .1 : w, off = x >= .2 ? 0 : x >= .12 ? 5 : x >= .08 ? 12 : x >= .05 ? 18 : 24;
+  return Math.max(40, Math.min(99, P.potential - off));
+}
 function calcOvr(a, pos){ const w = OVR_W[pos], av = (a.pace + a.shooting + a.passing + a.defending) / 4, cm = a.composure ?? av, ph = a.physical ?? av; return Math.round(a.pace*w[0] + a.shooting*w[1] + a.passing*w[2] + a.defending*w[3] + cm*w[4] + ph*w[5]); }
 function meLabel() { return P.name + (!natMatch && isStarPlayer(matchGoals) ? ' ★' : ''); }
 function isStarPlayer(extra) {
@@ -1284,15 +1291,23 @@ function initCareer() {
 onPosChange();
 
 /* ================= DASHBOARD & LOGIC ================= */
+function calcMarketValue(ovr) {
+  const first = isFirstTeam(), s = P.season || {}, f = P.form || [], fa = f.length ? f.reduce((a, b) => a + b, 0) / f.length : 6.5;
+  const base = (first ? 450000 : 60000) * Math.pow(1.095, ovr - 50);
+  const prod = first ? (s.goals || 0) * 70000 + (s.assists || 0) * 40000 + (s.cs || 0) * 45000 + (P.stats.goals || 0) * 8000
+                     : (s.goals || 0) * 8000 + (s.assists || 0) * 5000 + (P.stats.goals || 0) * 1000;
+  const formM = Math.max(0.85, Math.min(1.8, 1 + (fa - 6.6) * 0.28));
+  const grow = P.age <= 23 ? 1 + Math.max(0, P.potential - ovr) * 0.015 : 1;
+  const ageM = P.age <= 21 ? 1.35 : P.age <= 26 ? 1.1 : P.age <= 30 ? 0.9 : 0.5;
+  return Math.round((base + prod) * formM * grow * ageM / 1000) * 1000;
+}
 function updateDashboardUI() {
   setTimeout(saveGame, 0);
   let ovr = ovrOf();
   
-  P.marketValue = isFirstTeam() 
-    ? Math.round(ovr * 25000 + (P.stats.goals * 40000))
-    : Math.round(ovr * 3000 + (P.stats.goals * 5000));
-
-  P.marketValue = Math.round(P.marketValue * (P.age <= 21 ? 1.4 : P.age <= 26 ? 1.1 : P.age <= 30 ? 0.9 : 0.5));
+  const _mvKey = currentSeason * 100 + currentWeek, _mvNew = calcMarketValue(ovr);
+  if (P.mvKey === undefined) P.mvPrev = _mvNew; else if (P.mvKey !== _mvKey) P.mvPrev = P.marketValue;
+  P.mvKey = _mvKey; P.marketValue = _mvNew;
   const NEXT = {"สำรองอคาเดมี่":"ตัวจริงเยาวชน: trust ≥30","ตัวจริงเยาวชน":"ชุดใหญ่: trust ≥70, OVR ≥60, อายุ ≥17","ดาวรุ่งชุดใหญ่":"ตัวจริง: trust ≥85, OVR ≥68","ตัวจริง":"กัปตัน: trust ≥95, OVR ≥72, อายุ ≥25","กัปตันทีม":"ถึงจุดสูงสุดแล้ว"};
   document.getElementById('nextGoalText').textContent = ' เป้าหมายถัดไป — ' + NEXT[P.role];
   document.getElementById('hudName').textContent = P.name;
@@ -1311,7 +1326,8 @@ function updateDashboardUI() {
   renderPosChange();
   document.getElementById('coachTrustText').textContent = `${P.coachTrust} / 100`;
 
-  document.getElementById('infoVal').textContent = `฿${P.marketValue.toLocaleString()}`;
+  { const pv = P.mvPrev || P.marketValue, d = pv ? (P.marketValue - pv) / pv : 0, el = document.getElementById('infoVal');
+    el.innerHTML = `฿${P.marketValue.toLocaleString()}` + (Math.abs(d) >= 0.01 ? ` <small style="font-size:11px;color:${d > 0 ? '#2de2a0' : '#ff6b6b'}">${d > 0 ? '▲' : '▼'} ${Math.abs(Math.round(d * 100))}%</small>` : ''); }
   document.getElementById('infoWage').textContent = `฿${P.wage.toLocaleString()}`;
   document.getElementById('infoBank').textContent = `฿${P.bankBalance.toLocaleString()}`;
   document.getElementById('infoContract').textContent = isFirstTeam() ? `ถึงปลายปีที่ ${P.contractEnd} (อีก ${P.contractEnd - currentSeason + 1} ฤดูกาล)` : 'สัญญาเยาวชนอคาเดมี่';
@@ -1347,7 +1363,7 @@ function updateDashboardUI() {
       <div style="height:8px; border-radius:6px; background:rgba(0,0,0,.35); margin-top:6px; overflow:hidden;"><div style="width:${Math.min(100, Math.round(P.attrs[k] / P.potential * 100))}%; height:100%; background:var(--accent-gold);"></div></div>
     </div>`).join('') + `<div style="grid-column:1/-1; font-size:12px; color:var(--text-muted);">ศักยภาพโดยประมาณ ~${Math.round(P.potential / 5) * 5} · ${P.injuredWeeks > 0 ? ' บาดเจ็บ เหลืออีก ' + P.injuredWeeks + ' สัปดาห์' : ' ร่างกายพร้อม'}</div>`;
 
-  document.getElementById('tableTitleText').textContent = isFirstTeam() 
+  if (tableView !== 'cup') document.getElementById('tableTitleText').textContent = isFirstTeam() 
     ? " ตารางคะแนน ไทยลีก 1 (16 ทีม)" 
     : " ตารางคะแนน ไทย Youth League (U18)";
 }
@@ -1368,11 +1384,16 @@ function doWeeklyTraining() {
   let msg = ` ซ้อมเสร็จสิ้น (ฟิต -${cfg.c}%) แต่ครั้งนี้ยังไม่เห็นพัฒนาการ`;
   if (Math.random() < chance) {
     const f = document.getElementById('trainFocus').value;
-    const pool = POS_STATS[P.pos];
-    const k = (f !== 'auto' && Math.random() < 0.8) ? f : (Math.random() < 0.7 ? pool[Math.floor(Math.random() * pool.length)] : Object.keys(P.attrs)[Math.floor(Math.random() * Object.keys(P.attrs).length)]);
-    const amt = (P.age <= 23 ? 2 : 1) + ((lv === 'heavy' && Math.random() < 0.4) ? 1 : 0);
-    if (P.attrs[k] < P.potential) { P.attrs[k] = Math.min(P.potential, P.attrs[k] + amt); msg = ` ซ้อมเสร็จสิ้น! ${STAT_LABELS[k]} +${amt} (ฟิต -${cfg.c}%)`; }
-    else msg = ` ${STAT_LABELS[k]} ถึงขีดจำกัดศักยภาพแล้ว (ฟิต -${cfg.c}%)`;
+    const pool = POS_STATS[P.pos], allK = Object.keys(P.attrs), open = a => a.filter(x => P.attrs[x] < attrCap(x));
+    let k;
+    if (f !== 'auto' && Math.random() < 0.8) k = f;
+    else { const c = open(Math.random() < 0.8 ? pool : allK); k = c.length ? c[Math.floor(Math.random() * c.length)] : (open(allK)[0] || pool[0]); }
+    const cap = attrCap(k), room = cap - P.attrs[k];
+    let amt = (P.age <= 23 ? 2 : 1) + ((lv === 'heavy' && Math.random() < 0.4) ? 1 : 0);
+    if (room <= 8) amt = 1;
+    if (room > 0 && !(room <= 8 && Math.random() < 0.45)) { amt = Math.min(amt, room); P.attrs[k] += amt; msg = ` ซ้อมเสร็จสิ้น! ${STAT_LABELS[k]} +${amt} (ฟิต -${cfg.c}%)`; }
+    else if (room <= 0) msg = ` ${STAT_LABELS[k]} ถึงเพดานของตำแหน่ง ${P.pos} แล้ว (${cap}) ลองโฟกัสค่าอื่น (ฟิต -${cfg.c}%)`;
+    else msg = ` ซ้อมเสร็จสิ้น แต่ ${STAT_LABELS[k]} ใกล้เพดานแล้ว พัฒนาช้าลง (ฟิต -${cfg.c}%)`;
   }
   if (Math.random() < cfg.i) { P.injuredWeeks = 1 + Math.floor(Math.random() * 2); msg += `\n ซ้อมหนักจนบาดเจ็บ! พัก ${P.injuredWeeks} สัปดาห์`; }
   alert(msg);
@@ -1591,6 +1612,7 @@ function prepareNextMatch() {
   const fx = fixtures[(currentWeek - 1) % fixtures.length];
   currentOpponent = tbl().find(t => t.name === fx.n) || tbl().find(t => t.name !== P.club);
   isHome = fx.h;
+  if (isCupMatch) { try { const _o = cupOpp(); if (_o) { currentOpponent = _o.o; isHome = _o.home; } } catch (e) { console.error(e); } }
   let leagueName = isFirstTeam() ? "ฟุตบอลไทยลีก 1" : "ไทย Youth League (U18)";
   let teamSuffix = isFirstTeam() ? "" : " U18";
 
@@ -2145,6 +2167,7 @@ function showMatchSummary() {
         trophiesWon.push({ name: trophyTitle, year: currentSeason });
       } else alert(' ผ่านเข้ารอบฟุตบอลถ้วยต่อไป!');
     } else { cupAlive = false; alert(' แพ้ในบอลถ้วย ตกรอบ'); }
+    try { cupRecord(win, homeScore, awayScore, homeScore === awayScore); renderLeagueTable(); } catch (e) { console.error(e); }
     renderTrophies();
   }
 }
@@ -2355,9 +2378,9 @@ function advanceSeason() {
   currentSeason++; currentWeek = 1; P.age++;
   runPromotionRelegation();
   [leagueTeams, youthTeams, div2Teams].forEach(tb => tb.forEach(t => { t.p = t.w = t.d = t.l = t.pts = 0; t.gf = 0; t.ga = 0; if (t.squad) t.squad.forEach(pl => { pl.g = 0; pl.a = 0; pl.m = 0; }); if (t.gk) t.gk.cs = 0; t.rating = Math.max(50, Math.min(80, t.rating + Math.floor(Math.random() * 5) - 2)); }));
-  cupAlive = true; P.season = { apps: 0, goals: 0, assists: 0, yellows: 0, reds: 0, rSum: 0, rN: 0 };
+  cupAlive = true; cup = null; P.season = { apps: 0, goals: 0, assists: 0, yellows: 0, reds: 0, rSum: 0, rN: 0 };
   alert(` จบฤดูกาล! เข้าสู่ปีที่ ${currentSeason} (อายุ ${P.age} ปี)`);
-  if (P.age >= 26 && P.age <= 33) P.attrs.composure = Math.min(P.potential, (P.attrs.composure || 50) + 1);
+  if (P.age >= 26 && P.age <= 33) P.attrs.composure = Math.min(Math.max(P.attrs.composure || 50, attrCap('composure')), (P.attrs.composure || 50) + 1);
   if (P.age >= 31) {
     P.attrs.physical = Math.max(30, (P.attrs.physical || 50) - (P.age >= 34 ? 2 : 1));
     P.attrs.pace = Math.max(30, P.attrs.pace - 2);
@@ -2499,9 +2522,94 @@ function runPromotionRelegation() {
   }
 }
 
+
+/* ---------- ถ้วย (น็อคเอาท์ 16 ทีม) ---------- */
+const CUP_WEEKS = [6, 12, 18, 24], CUP_RN = ['รอบแรก (16 ทีม)', 'รอบก่อนรองชนะเลิศ', 'รอบรองชนะเลิศ', 'รอบชิงชนะเลิศ'];
+function cupName() { return isFirstTeam() ? 'ช้าง เอฟเอ คัพ' : 'เยาวชน เอฟเอ คัพ'; }
+function cupEnsure() {
+  const f = isFirstTeam();
+  if (cup && cup.s === currentSeason && cup.f === f) return cup;
+  const names = tbl().map(t => t.name).slice(0, 16).sort(() => Math.random() - 0.5), ties = [];
+  for (let i = 0; i < names.length; i += 2) ties.push({ a: names[i], b: names[i + 1] || null });
+  cup = { s: currentSeason, f, r: [ties], w0: currentWeek, alive0: cupAlive, legacy: currentWeek > 6 };
+  return cup;
+}
+function cupRating(n) { const t = tbl().find(x => x.name === n); return t ? t.rating : 60; }
+function cupPois(l) { let L = Math.exp(-l), k = 0, p = 1; do { k++; p *= Math.random(); } while (p > L); return k - 1; }
+function cupSimTie(t, force) {
+  if (t.w) return;
+  if (!t.b) { t.w = t.a; return; }
+  const pa = 1 / (1 + Math.exp(-(cupRating(t.a) - cupRating(t.b)) / 7));
+  t.sa = cupPois(1.3 * (0.6 + pa * 0.8)); t.sb = cupPois(1.3 * (0.6 + (1 - pa) * 0.8));
+  if (t.sa === t.sb) { t.p = 1; t.w = Math.random() < pa ? t.a : t.b; } else t.w = t.sa > t.sb ? t.a : t.b;
+  if (force && t.w !== force) {
+    if (t.sa === t.sb) t.w = force; else { const x = t.sa; t.sa = t.sb; t.sb = x; t.w = force; }
+  }
+}
+function cupBuildNext(r) {
+  if (r >= 3 || cup.r[r + 1]) return;
+  const ws = cup.r[r].map(t => t.w), ties = [];
+  for (let i = 0; i < ws.length; i += 2) ties.push({ a: ws[i], b: ws[i + 1] || null });
+  cup.r[r + 1] = ties;
+}
+function cupSimRound(r, mineToo) {
+  const c = cup; if (!c || !c.r[r]) return;
+  c.r[r].forEach(t => {
+    if (t.w) return;
+    const mine = t.a === P.club || t.b === P.club;
+    if (mine && !mineToo) return;
+    if (mine && c.legacy) {
+      const lastR = CUP_WEEKS.filter(w => w < c.w0).length - 1, win = c.alive0 || r < lastR;
+      cupSimTie(t, win ? P.club : (t.a === P.club ? t.b : t.a));
+    } else cupSimTie(t);
+  });
+  if (c.r[r].every(t => t.w)) cupBuildNext(r);
+}
+function cupSync() {
+  cupEnsure();
+  for (let r = 0; r < 4; r++) { if (!cup.r[r]) break; if (CUP_WEEKS[r] < currentWeek) cupSimRound(r, true); }
+}
+function cupOpp() {
+  cupSync();
+  const r = CUP_WEEKS.indexOf(currentWeek), tie = cup.r[r] && cup.r[r].find(t => t.a === P.club || t.b === P.club);
+  if (!tie || tie.w || !tie.b) return null;
+  const on = tie.a === P.club ? tie.b : tie.a, o = tbl().find(t => t.name === on);
+  return o ? { o, home: tie.a === P.club } : null;
+}
+function cupRecord(win, mine, opp, pen) {
+  cupSync();
+  const r = CUP_WEEKS.indexOf(currentWeek), tie = cup.r[r] && cup.r[r].find(t => t.a === P.club || t.b === P.club);
+  if (!tie || tie.w) return;
+  const me = tie.a === P.club;
+  tie.sa = me ? mine : opp; tie.sb = me ? opp : mine; tie.p = pen ? 1 : 0;
+  tie.w = win ? P.club : (me ? tie.b : tie.a);
+  cupSimRound(r, true);
+}
+function cupTieHTML(t) {
+  const row = (n, sc) => {
+    if (!n) return '<div class="cup-team tbd"><span>-</span></div>';
+    const w = t.w === n, lose = t.w && !w, me = n === P.club;
+    return `<div class="cup-team${w ? ' win' : ''}${lose ? ' lose' : ''}${me ? ' me' : ''}"><span class="cup-nm">${logoHTML(n, 20)}<span>${ESC(n)}</span></span><b>${t.w && sc !== undefined ? sc : ''}</b></div>`;
+  };
+  return `<div class="cup-tie">${row(t.a, t.sa)}${row(t.b, t.sb)}${t.p ? '<div class="cup-pen">ชนะจุดโทษ</div>' : ''}</div>`;
+}
+function cupHTML() {
+  cupSync();
+  const c = cup, fin = c.r[3] && c.r[3][0] && c.r[3][0].w;
+  let h = `<div class="ps-note">${cupName()} ปีที่ ${currentSeason} · แพ้คัดออก แข่งสัปดาห์ที่ 6, 12, 18, 24</div>`;
+  if (fin) h += `<div class="cup-champ">แชมป์: <b>${ESC(fin)}</b></div>`;
+  for (let r = 0; r < 4; r++) {
+    const ties = c.r[r], cur = CUP_WEEKS[r] >= currentWeek && (r === 0 || (c.r[r - 1] && c.r[r - 1].every(t => t.w)));
+    h += `<div class="cup-rd"><div class="cup-h"><b>${CUP_RN[r]}</b><small>สัปดาห์ที่ ${CUP_WEEKS[r]}</small></div>`;
+    h += ties ? ties.map(cupTieHTML).join('') : `<div class="cup-tbd">รอผลรอบก่อนหน้า · ${8 >> r} คู่</div>`;
+    h += '</div>';
+  }
+  return h;
+}
+
 function setTableView(v) { tableView = v; renderLeagueTable(); }
 const DD_VIEW = [['table','','ตารางคะแนน'],['goals','','Top Scorers'],['assists','','Top Assists'],['cs','','Top Clean Sheets']];
-const DD_LEAGUE = [['youth','','U18'],['first','','ไทยลีก 1'],['div2','','ไทยลีก 2']];
+const DD_LEAGUE = [['youth','','U18'],['first','','ไทยลีก 1'],['div2','','ไทยลีก 2'],['cup','','ถ้วย']];
 let ddOpenKey = null;
 const CHEV = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#14306b" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
 function ddLabel(o) { return (o[1] ? o[1] + ' ' : '') + o[2]; }
@@ -2531,15 +2639,15 @@ function ddSet(key, opts, cur, animate) {
 function pickView(v) { statView = v; closeDD(); renderLeagueTable(true); }
 function pickLeague(v) { tableView = v; closeDD(); renderLeagueTable(true); }
 function renderLeagueTable(animate) {
-  const lvl = tableView || (isFirstTeam() ? 'first' : 'youth');
+  const lvl0 = tableView || (isFirstTeam() ? 'first' : 'youth'), isCup = lvl0 === 'cup' && statView === 'table', lvl = lvl0 === 'cup' ? (isFirstTeam() ? 'first' : 'youth') : lvl0;
   const t = lvl === 'first' ? leagueTeams : lvl === 'div2' ? div2Teams : youthTeams;
-  document.getElementById('tableTitleText').textContent = lvl === 'first' ? ' ฟุตบอลไทยลีก 1' : lvl === 'div2' ? ' ไทยลีก 2 (ลีกรอง)' : ' ไทย Youth League (U18)';
+  document.getElementById('tableTitleText').textContent = isCup ? ' ' + cupName() + ' (น็อคเอาท์)' : lvl === 'first' ? ' ฟุตบอลไทยลีก 1' : lvl === 'div2' ? ' ไทยลีก 2 (ลีกรอง)' : ' ไทย Youth League (U18)';
   buildDropdowns();
   ddSet('view', DD_VIEW, statView, animate === true);
-  ddSet('league', DD_LEAGUE, lvl, animate === true);
+  ddSet('league', DD_LEAGUE, lvl0, animate === true);
   document.getElementById('dd-league').style.display = statView === 'table' ? '' : 'none';
-  document.getElementById('tblWrap').style.display = statView === 'table' ? '' : 'none';
-  document.getElementById('playerStatsList').innerHTML = statView === 'table' ? '' : playerStatsHTML(t, lvl);
+  document.getElementById('tblWrap').style.display = statView === 'table' && !isCup ? '' : 'none';
+  document.getElementById('playerStatsList').innerHTML = isCup ? cupHTML() : statView === 'table' ? '' : playerStatsHTML(t, lvl);
   document.getElementById('leagueTableBody').innerHTML = t.map((x, idx) => {
     const mark = lvl === 'first' && idx >= t.length - 2 ? ' ▼' : lvl === 'div2' && idx < 2 ? ' ' : '';
     const zc = lvl === 'first' ? (idx === 0 ? 'z-top' : idx >= t.length - 2 ? 'z-down' : '') : lvl === 'div2' ? (idx < 2 ? 'z-up' : '') : (idx === 0 ? 'z-top' : ''); return `<tr class="${zc} ${x.name === P?.club && ((lvl === 'first') === isFirstTeam() || lvl === 'div2') ? 'my-team' : ''}"><td><b>${idx + 1}</b></td><td><span class="lg-row">${logoHTML(x.name, 22)}<span>${x.name}${lvl === 'youth' ? ' U18' : ''}${mark}</span></span></td><td>${x.p}</td><td>${x.w}</td><td>${x.d}</td><td>${x.l}</td><td>${(x.gf || 0) - (x.ga || 0)}</td><td><b>${x.pts}</b></td></tr>`;
@@ -2607,7 +2715,7 @@ const SAVE_KEY = 'nextgenfc_save_v1';
 function saveGame() {
   if (!P || P.retired) return;
   try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 1, P, currentSeason, currentWeek, hasTrainedThisWeek, hasRestedThisWeek, leagueTeams, youthTeams, div2Teams, fixtures, fixKey, agentHired, cupAlive, ownedItems, trophiesWon, usedScen, savedAt: Date.now() }));
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 1, P, currentSeason, currentWeek, hasTrainedThisWeek, hasRestedThisWeek, leagueTeams, youthTeams, div2Teams, fixtures, fixKey, agentHired, cupAlive, cup, ownedItems, trophiesWon, usedScen, savedAt: Date.now() }));
   } catch (e) {}
 }
 function readSave() {
@@ -2619,7 +2727,7 @@ function loadGame() {
   P = d.P;
   ['composure', 'physical'].forEach(k => { if (P.attrs[k] === undefined) P.attrs[k] = Math.round((P.attrs.pace + P.attrs.shooting + P.attrs.passing + P.attrs.defending) / 4); }); currentSeason = d.currentSeason; currentWeek = d.currentWeek;
   hasTrainedThisWeek = d.hasTrainedThisWeek; hasRestedThisWeek = d.hasRestedThisWeek;
-  leagueTeams = d.leagueTeams; fixtures = d.fixtures || []; fixKey = d.fixKey || ''; youthTeams = d.youthTeams || leagueTeams.map(t => ({ ...t, p:0, w:0, d:0, l:0, pts:0, gf:0, ga:0 })); div2Teams = d.div2Teams || div2Teams; agentHired = d.agentHired; cupAlive = d.cupAlive;
+  leagueTeams = d.leagueTeams; fixtures = d.fixtures || []; fixKey = d.fixKey || ''; youthTeams = d.youthTeams || leagueTeams.map(t => ({ ...t, p:0, w:0, d:0, l:0, pts:0, gf:0, ga:0 })); div2Teams = d.div2Teams || div2Teams; agentHired = d.agentHired; cupAlive = d.cupAlive; cup = d.cup || null;
   ownedItems = d.ownedItems; trophiesWon = d.trophiesWon;
   usedScen.length = 0; (d.usedScen || []).forEach(x => usedScen.push(x));
   migrateClubNames();
@@ -2711,6 +2819,18 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
 .off-quote{background:rgba(255,255,255,.1);border-left:4px solid var(--accent-red);border-radius:10px;padding:10px 12px;text-align:left;margin-bottom:12px;color:#fff;font-size:14px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
 .off-head{font-size:13px;color:var(--accent-gold);font-weight:700;margin-bottom:8px}
 .off-ta{min-height:96px;resize:none;font-size:16px;margin-bottom:10px;user-select:text;-webkit-user-select:text}
+
+.bar u{position:absolute;top:0;bottom:0;width:2px;background:#fff;opacity:.75;margin-left:-1px}
+.capn{font-size:10.5px;font-weight:500;color:var(--text-muted)}
+.cup-rd{margin-top:14px}.cup-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}.cup-h b{font:700 13.5px var(--font-title);color:var(--accent-gold)}.cup-h small{color:var(--text-muted);font-size:11.5px}
+.cup-tie{background:#0e1319;border:1px solid var(--bg-card-border);border-radius:12px;padding:4px 10px;margin-bottom:6px}
+.cup-team{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:13px;color:var(--text-muted)}.cup-team+.cup-team{border-top:1px solid var(--bg-card-border)}
+.cup-nm{display:flex;align-items:center;gap:8px;min-width:0}.cup-nm span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cup-team.win{color:#fff;font-weight:700}.cup-team.win b{color:var(--accent-gold)}.cup-team.lose{opacity:.55}.cup-team.me .cup-nm span:last-child{color:var(--accent-gold)}
+.cup-pen{font-size:10.5px;color:var(--text-muted);text-align:right;padding-bottom:4px}
+.cup-tbd{padding:12px;border:1px dashed var(--bg-card-border);border-radius:12px;color:var(--text-muted);font-size:12.5px;text-align:center}
+.cup-champ{margin:10px 0 0;padding:10px 12px;border-radius:12px;background:var(--mint-soft);color:var(--accent-gold);text-align:center}
+.pl-chips{flex-wrap:wrap}
 </style>
 <script>
 /* ===== ระบบเหตุการณ์นอกสนาม (นักวิจารณ์ / สัมภาษณ์) — ไม่มีบัฟ ไม่กระทบสถิติ ไม่เก็บประวัติ ===== */
@@ -2959,7 +3079,7 @@ function renderPro() {
     $id('mcHomeName').textContent = P.club; $id('mcAwayName').textContent = o.name + (isFirstTeam() ? '' : ' U18');
   }
   $id('radarBox').innerHTML = radarSVG();
-  $id('attributesListGrid').innerHTML = Object.keys(P.attrs).map(k => `<div class="arow"><span>${STAT_LABELS[k]}</span><b>${P.attrs[k]}</b><div class="bar"><i style="width:${Math.min(100, P.attrs[k])}%"></i></div></div>`).join('') + `<div class="muted-p" style="margin-top:4px;">ศักยภาพโดยประมาณ ~${Math.round(P.potential / 5) * 5} · ${P.injuredWeeks > 0 ? ' บาดเจ็บ เหลืออีก ' + P.injuredWeeks + ' สัปดาห์' : ' ร่างกายพร้อม'}</div>`;
+  $id('attributesListGrid').innerHTML = Object.keys(P.attrs).map(k => `<div class="arow"><span>${STAT_LABELS[k]}</span><b>${P.attrs[k]}<small class="capn"> / ${attrCap(k)}</small></b><div class="bar"><i style="width:${Math.min(100, P.attrs[k])}%"></i><u style="left:${attrCap(k)}%"></u></div></div>`).join('') + `<div class="muted-p" style="margin-top:4px;">เส้นขีดบนแถบ = เพดานที่ฝึกได้ของตำแหน่ง ${P.pos} ค่าที่ไม่เกี่ยวกับตำแหน่งจะฝึกได้ไม่สูงเท่าค่าหลัก ต้องเลือกว่าจะเก่งด้านไหน<br>ศักยภาพโดยประมาณ ~${Math.round(P.potential / 5) * 5} · ${P.injuredWeeks > 0 ? ' บาดเจ็บ เหลืออีก ' + P.injuredWeeks + ' สัปดาห์' : ' ร่างกายพร้อม'}</div>`;
 }
 const _udu = updateDashboardUI;
 updateDashboardUI = function () { _udu(); try { renderPro(); } catch (e) { console.error(e); } };
@@ -3426,7 +3546,7 @@ gmNext = function () {
 /* ---------- ตาราง / สถิติ ---------- */
 buildDropdowns = function () {
   const box = $id('tblDropdowns'); if (!box || box.dataset.built) return;
-  const V = [['table', 'ตาราง'], ['goals', 'ดาวซัลโว'], ['assists', 'แอสซิสต์'], ['cs', 'คลีนชีต']], Lg = [['youth', 'U18'], ['first', 'ไทยลีก 1'], ['div2', 'ไทยลีก 2']];
+  const V = [['table', 'ตาราง'], ['goals', 'ดาวซัลโว'], ['assists', 'แอสซิสต์'], ['cs', 'คลีนชีต']], Lg = [['youth', 'U18'], ['first', 'ไทยลีก 1'], ['div2', 'ไทยลีก 2'], ['cup', 'ถ้วย']];
   box.innerHTML = `<div class="pl-tabs" id="dd-view">${V.map(o => `<button type="button" data-v="${o[0]}" onclick="pickView('${o[0]}')">${o[1]}</button>`).join('')}</div><div class="pl-chips" id="dd-league">${Lg.map(o => `<button type="button" data-v="${o[0]}" onclick="pickLeague('${o[0]}')">${o[1]}</button>`).join('')}</div>`;
   box.dataset.built = '1';
 };
