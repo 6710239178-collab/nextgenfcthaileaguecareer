@@ -1739,7 +1739,7 @@ function startLiveMatchCore() {
   }
 
   // ปรับความเร็วลูปให้กระชับลงพอดีๆ (500ms / นาที)
-  matchTimer = setInterval(runMatchLoop, 500);
+  matchTimer = setInterval(runMatchLoop, MATCH_MS);
 }
 
 function runMatchLoop() {
@@ -1753,7 +1753,7 @@ function runMatchLoop() {
     clearInterval(matchTimer);
     isPlayerOnField = false; isPlayerWarmingUp = false; matchSubbedOff = true;
     addMatchLog(`80'`, ' โค้ชเปลี่ยนตัวคุณออก', 'sub');
-    cinematic(farewellTributeLines(), ' กลับสู่สนาม', () => { matchTimer = setInterval(runMatchLoop, 500); });
+    cinematic(farewellTributeLines(), ' กลับสู่สนาม', () => { matchTimer = setInterval(runMatchLoop, MATCH_MS); });
     return;
   }
 
@@ -1851,7 +1851,7 @@ function penaltyShot(c) {
     matchRating = Math.max(4, matchRating - 0.9); P.coachTrust = Math.max(0, P.coachTrust - 3);
     addMatchLog(tm, `❌ ${meLabel()} ยิงจุดโทษ${c.h === 'H' ? 'สูงเกินคานออกไป' : 'เฉียดเสาออกไป'}!`, 'alert');
   }
-  matchTimer = setInterval(runMatchLoop, 500);
+  matchTimer = setInterval(runMatchLoop, MATCH_MS);
 }
 function simulateMinuteEvent(min) {
   if (!natMatch && !matchRed && min >= 3 && min <= 88 && Math.random() < 0.0016) { triggerPenalty(min); return; }
@@ -2155,7 +2155,7 @@ function makeChoice(i) {
       addMatchLog(t, `🚨 GOAL! ${pickScorer(currentOpponent, 'g')} (${currentOpponent.name}) ทำประตูจากความผิดพลาดของเรา`, 'alert');
     }
   }
-  matchTimer = setInterval(runMatchLoop, 500);
+  matchTimer = setInterval(runMatchLoop, MATCH_MS);
 }
 
 function addMatchLog(min, msg, type = 'log') {
@@ -2872,6 +2872,29 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
 .rs-ctl{display:flex;gap:4px}.rs-ctl button{min-width:34px;padding:6px 8px;border-radius:9px;border:1px solid var(--bg-card-border);background:#0e1319;color:#fff;font:700 12px var(--font-title);cursor:pointer}
 .rs-left{display:flex;justify-content:space-between;margin:8px 0 12px;padding:10px 12px;border-radius:12px;background:var(--mint-soft);color:var(--accent-gold);font-size:13px}
 .rs-btns{display:grid;gap:8px;margin-top:10px}
+
+/* ===== ตั้งค่า + เลย์เอาต์หลายอุปกรณ์ ===== */
+html.lay-tablet body,html.lay-tablet .app-container{max-width:840px}
+html.lay-desktop body,html.lay-desktop .app-container{max-width:1080px}
+html.lay-wide .sidebar{max-width:560px}
+html.lay-wide #tab-home.active,html.lay-wide #tab-attrs.active,html.lay-wide #tab-trophies.active{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+html.lay-wide #tab-home>.hero,html.lay-wide #tab-home>.meters,html.lay-wide #tab-home>.goalline,html.lay-wide #tab-home>.credit,html.lay-wide #tab-home>#emergencyRestCard,html.lay-wide #tab-home>#seasonStrip,html.lay-wide #tab-trophies>.phero{grid-column:1/-1}
+html.lay-wide #tab-lifestyle.active,html.lay-wide #tab-agent.active{max-width:720px;margin:0 auto}
+html.lay-wide #liveStreamArea:not(.hidden){display:grid;grid-template-columns:1fr;gap:12px;align-items:start}
+html.lay-wide #liveStreamArea:has(#decisionBox:not(.hidden)){grid-template-columns:1.1fr 1fr}
+html.lay-wide #liveStreamArea>.live-scoreboard,html.lay-wide #liveStreamArea>#ratingSummaryBox{grid-column:1/-1}
+html.lay-wide #liveStreamArea>h4{grid-column:1;grid-row:2;margin:0!important}
+html.lay-wide #liveStreamArea>#matchLogBox{grid-column:1;grid-row:3;height:420px}
+html.lay-wide #liveStreamArea>#decisionBox{grid-column:2;grid-row:2/4;position:static!important;max-width:none;max-height:none;margin:0;border-radius:14px!important;border-bottom:1px solid var(--bg-card-border)!important}
+html.fs-s body{zoom:.92}html.fs-l body{zoom:1.12}
+.brandmini{cursor:pointer}.brandmini svg{opacity:.45;margin-left:2px}
+#settingsOv{position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.72);display:flex;align-items:flex-end;justify-content:center}
+#settingsOv .st-sheet{width:100%;max-width:520px;max-height:88vh;overflow-y:auto;background:#10151c;border:1px solid var(--bg-card-border);border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px))}
+@media(min-width:700px){#settingsOv{align-items:center}#settingsOv .st-sheet{border-radius:18px}}
+.st-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.st-h b{font:700 17px var(--font-title);color:#fff}
+.st-x{background:none;border:0;color:var(--text-muted);font-size:22px;cursor:pointer}
+.st-sec{margin:14px 0 0}.st-sec .lbl{margin-bottom:6px}.st-sec .pl-chips{flex-wrap:wrap}
+.st-sv{display:grid;gap:8px;margin-top:6px}
 </style>
 <script>
 /* ===== ระบบเหตุการณ์นอกสนาม (นักวิจารณ์ / สัมภาษณ์) — ไม่มีบัฟ ไม่กระทบสถิติ ไม่เก็บประวัติ ===== */
@@ -3750,6 +3773,59 @@ function renderRespec() {
 }
 const _udB = updateDashboardUI;
 updateDashboardUI = function () { _udB.apply(this, arguments); try { renderRespec(); } catch (e) { console.error(e); } };
+
+/* ---------- ตั้งค่า ---------- */
+const SETK = 'ngfc_settings';
+let SET = { layout: 'auto', font: 'm', speed: 'n' };
+try { Object.assign(SET, JSON.parse(localStorage.getItem(SETK)) || {}); } catch (e) {}
+let MATCH_MS = 500;
+function applySettings() {
+  const w = window.innerWidth, lay = SET.layout === 'auto' ? (w < 700 ? 'phone' : w < 1100 ? 'tablet' : 'desktop') : SET.layout, h = document.documentElement;
+  h.classList.remove('lay-phone', 'lay-tablet', 'lay-desktop', 'lay-wide', 'fs-s', 'fs-m', 'fs-l');
+  h.classList.add('lay-' + lay, 'fs-' + SET.font); if (lay !== 'phone') h.classList.add('lay-wide');
+  MATCH_MS = { s: 800, n: 500, f: 250 }[SET.speed] || 500;
+}
+function setSet(k, v) { SET[k] = v; try { localStorage.setItem(SETK, JSON.stringify(SET)); } catch (e) {} applySettings(); renderSettings(); }
+function closeSettings() { const o = document.getElementById('settingsOv'); if (o) o.remove(); }
+function renderSettings() {
+  const o = document.getElementById('settingsOv'); if (!o) return;
+  const chips = (key, arr) => `<div class="pl-chips">${arr.map(([v, t]) => `<button type="button" class="${SET[key] === v ? 'on' : ''}" onclick="setSet('${key}','${v}')">${t}</button>`).join('')}</div>`;
+  o.querySelector('.st-sheet').innerHTML = `<div class="st-h"><b>ตั้งค่า</b><button class="st-x" onclick="closeSettings()">×</button></div>
+    <div class="st-sec"><div class="lbl">รูปแบบหน้าจอ</div>${chips('layout', [['auto', 'อัตโนมัติ'], ['phone', 'มือถือ'], ['tablet', 'ไอแพด'], ['desktop', 'คอม']])}</div>
+    <div class="st-sec"><div class="lbl">ขนาดตัวอักษร</div>${chips('font', [['s', 'เล็ก'], ['m', 'กลาง'], ['l', 'ใหญ่']])}</div>
+    <div class="st-sec"><div class="lbl">ความเร็วแมตช์ (มีผลกับนัดถัดไป)</div>${chips('speed', [['s', 'ช้า'], ['n', 'ปกติ'], ['f', 'เร็ว']])}</div>
+    <div class="st-sec"><div class="lbl">ข้อมูลเซฟ</div><div class="st-sv"><button class="btn-blue" onclick="exportSave()">ส่งออกเซฟเป็นไฟล์</button><button class="btn-blue" onclick="document.getElementById('impFile').click()">นำเข้าเซฟจากไฟล์</button><input type="file" id="impFile" accept=".json,application/json" style="display:none" onchange="importSave(this)"><button class="btn-blue" style="color:#ff6b6b" onclick="closeSettings();deleteSave()">ลบเซฟและเริ่มใหม่</button></div></div>`;
+}
+function openSettings() {
+  closeSettings();
+  const o = document.createElement('div'); o.id = 'settingsOv'; o.innerHTML = '<div class="st-sheet"></div>';
+  o.addEventListener('click', e => { if (e.target === o) closeSettings(); });
+  document.body.appendChild(o); renderSettings();
+}
+function exportSave() {
+  try { if (typeof P !== 'undefined' && P && typeof saveGame === 'function') saveGame(); } catch (e) {}
+  const raw = localStorage.getItem(SAVE_KEY); if (!raw) { alert('ยังไม่มีเซฟให้ส่งออก'); return; }
+  const a = document.createElement('a'), d = new Date();
+  a.href = URL.createObjectURL(new Blob([raw], { type: 'application/json' }));
+  a.download = `nextgen-fc-save-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+function importSave(inp) {
+  const f = inp.files && inp.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    let d; try { d = JSON.parse(r.result); } catch (e) {}
+    if (!d || d.v !== 1 || !d.P) { alert('ไฟล์นี้ไม่ใช่เซฟของ NextGen FC'); return; }
+    closeSettings();
+    gameConfirm('นำเข้าเซฟนี้?\nเซฟปัจจุบันจะถูกแทนที่', 'นำเข้า', 'ยกเลิก', () => { try { localStorage.setItem(SAVE_KEY, r.result); } catch (e) {} location.reload(); });
+  };
+  r.readAsText(f); inp.value = '';
+}
+(function () {
+  applySettings();
+  window.addEventListener('resize', () => { if (SET.layout === 'auto') applySettings(); });
+  document.querySelectorAll('.brandmini').forEach(b => { b.insertAdjacentHTML('beforeend', '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8591a3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>'); b.addEventListener('click', openSettings); });
+})();
 </script>
 </body>
 </html>
