@@ -1019,10 +1019,11 @@ function genSquad() {
   return out;
 }
 function ownGoalText() {
-  const t = myTeam(), a = pickPlayer(t), credit = !isCupMatch && !natMatch, star = pl => pl.senior && !youthTeams.includes(t) ? ' ★' : '';
+  const t = myTeam(), a = pickPlayer(t), credit = !isCupMatch && !natMatch, star = pl => '';
   if (credit) a.g = (a.g || 0) + 1;
+  bumpMF(a, 1.5);
   let txt = `${a.n}${star(a)} (${myName()}) ยิงประตู!`;
-  if (Math.random() < 0.5) { const b = pickPlayer(t, a); if (credit) b.a = (b.a || 0) + 1; txt += ' แอสซิสต์: ' + b.n + star(b); }
+  if (Math.random() < 0.5) { const b = pickPlayer(t, a); if (credit) b.a = (b.a || 0) + 1; bumpMF(b, 1); txt += ' แอสซิสต์: ' + b.n + star(b); }
   return txt;
 }
 
@@ -1050,7 +1051,7 @@ function pickScorer(t, kind) {
   if (t.noNames) return 'ผู้เล่น';
   const pl = pickPlayer(t);
   if (kind && !isCupMatch && !natMatch) pl[kind] = (pl[kind] || 0) + 1;
-  return pl.n + (pl.senior && !youthTeams.includes(t) ? ' ★' : '');
+  return pl.n;
 }
 let matchStamp = 0;
 function tickM(t) { squadOf(t).forEach(pl => { if (Math.random() < 0.88) { pl.m = (pl.m || 0) + 1; pl._pm = matchStamp; } }); }
@@ -1121,7 +1122,7 @@ function capsFor(pos, pot) {
 }
 function attrCap(k, pos) { const i = CAP_KEYS.indexOf(k); if (i < 0) return 99; const cs = capsFor(pos || P.pos, P.potential), b = cs[i]; return (P.sig || []).includes(k) ? Math.max(b, ...cs) : b; }
 function calcOvr(a, pos){ const w = OVR_W[pos], av = (a.pace + a.shooting + a.passing + a.defending) / 4, cm = a.composure ?? av, ph = a.physical ?? av; return Math.round(a.pace*w[0] + a.shooting*w[1] + a.passing*w[2] + a.defending*w[3] + cm*w[4] + ph*w[5]); }
-function meLabel() { return P.name + (!natMatch && isStarPlayer(matchGoals) ? ' ★' : ''); }
+function meLabel() { return P.name; }
 function isStarPlayer(extra) {
   const t = tbl().find(x => x.name === P.club); if (!t) return false;
   const top = squadOf(t).reduce((m, pl) => Math.max(m, pl.g || 0), 0);
@@ -1801,7 +1802,7 @@ const PEN_OPTS = [
   { t: 'ยิงเข้ามุมซ้ายล่าง', where: 'มุมซ้ายล่าง', side: 'L', h: 'L' }, { t: 'ยิงตรงกลางประตู', where: 'กลางประตู', side: 'C', h: 'L' }, { t: 'ยิงเข้ามุมขวาล่าง', where: 'มุมขวาล่าง', side: 'R', h: 'L' }
 ];
 function penLeaders(t) { const sq = squadOf(t), sen = sq.filter(x => x.senior); return sen.length ? sen : sq.filter(x => x.r === 'FW').slice(0, 2); }
-function penName(pl, t) { return pl.n + (pl.senior && !youthTeams.includes(t) ? ' ★' : ''); }
+function penName(pl, t) { return pl.n; }
 function pickPenaltyTaker(t) {
   const lead = penLeaders(t), att = ['ST', 'LW', 'RW', 'CAM'].includes(P.pos), meOk = isPlayerOnField && !matchRed && (isStarPlayer(matchGoals) || (P.season.goals + matchGoals >= 2 && ['ST', 'LW', 'RW', 'CAM', 'CM'].includes(P.pos) && P.role !== 'สำรองอคาเดมี่'));
   if (meOk && att && (isStarPlayer(matchGoals) || Math.random() < 0.6)) return { me: true };
@@ -1825,7 +1826,7 @@ function triggerPenalty(min) {
   const earnTxt = meEarn ? 'คุณถูกทำฟาวล์ในเขตโทษ' : `${penName(pickPlayer(t), t)} ถูกทำฟาวล์ในเขตโทษ`;
   const who = Math.random() < 0.5 ? 'โค้ช' : `กัปตันทีม ${penLeaders(t)[0].n}`;
   addMatchLog(`${min}'`, `🚨 ทีมได้จุดโทษ! ${earnTxt}`, 'highlight');
-  gameModal(` ทีมได้จุดโทษ!\n\n${earnTxt}\n\n★ ${who}ให้คุณรับหน้าที่ยิงจุดโทษ\n\n ${homeScore > awayScore ? 'นำ' : homeScore < awayScore ? 'ตามหลัง' : 'เสมอ'} ${homeScore}-${awayScore} · นาทีที่ ${min}`, [{ label: ' ไปยิงจุดโทษ', cb: () => penaltyChoices(min) }]);
+  gameModal(` ทีมได้จุดโทษ!\n\n${earnTxt}\n\n${who}ให้คุณรับหน้าที่ยิงจุดโทษ\n\n ${homeScore > awayScore ? 'นำ' : homeScore < awayScore ? 'ตามหลัง' : 'เสมอ'} ${homeScore}-${awayScore} · นาทีที่ ${min}`, [{ label: ' ไปยิงจุดโทษ', cb: () => penaltyChoices(min) }]);
 }
 function penaltyChoices(min) {
   curChoices = PEN_OPTS.map(o => ({ ...o, pen: true }));
@@ -2127,7 +2128,8 @@ function makeChoice(i) {
   p = Math.max(0.08, Math.min(0.92, p));
   const t = `${currentMinute}'`;
   const score = () => setScoreText();
-  if (Math.random() < p) {
+  const _ok = Math.random() < p; try { if (c.st === 'pa' && curMatePl) bumpMF(curMatePl, _ok ? 0.5 : -0.5); } catch (e) {}
+  if (_ok) {
     card.classList.add('flash-gold'); setTimeout(() => card.classList.remove('flash-gold'), 800);
     if (c.ok === 'GOAL') {
       homeScore++; matchGoals++; matchRating = Math.min(10, matchRating + 1.2); P.coachTrust = Math.min(100, P.coachTrust + 2); score();
@@ -3316,25 +3318,42 @@ function planStart() {
   return planCache = { k, on, chance, why: inj ? 'บาดเจ็บ' : banned ? 'ถูกแบน' : benched ? 'โค้ชให้นั่งสำรอง' : 'อยู่ในรายชื่อสำรอง' };
 }
 chanceStart = function (b, be) { if (planCache && planCache.k === planKey()) return planCache.chance; return chanceStartOrig(b, be); };
+function bumpMF(pl, v) { const k = planKey(); if (pl._mfK !== k) { pl._mfK = k; pl._mf = 0; } pl._mf += v; }
+function formLevel(pl) {
+  if (!pl) return 1;
+  const live = pl._mfK === planKey() ? (pl._mf || 0) : 0, rate = ((pl.g || 0) + 0.7 * (pl.a || 0)) / Math.max(3, pl.m || 0), att = pl.r === 'FW' || pl.r === 'MF';
+  const sc = rate * 2 + live * 0.5;
+  if (sc >= 1.2) return 3; if (sc >= 0.6) return 2;
+  if (live <= -0.5 || (att && (pl.m || 0) >= 6 && rate === 0)) return 0;
+  return 1;
+}
+const FORM_COL = [['#6b7f99', '#232c38'], null, ['#f2c14e', '#3a3216'], ['#ff8a3d', '#3d2112']], FORM_TXT = ['เงียบ', 'ปกติ', 'ดี', 'ร้อนแรง'];
+function findPl(t, name) { return squadOf(t).find(x => x.n === name) || (t.cb2 && t.cb2.n === name ? t.cb2 : null); }
 function lineupOf(t, mine) {
   const out = {}, sq = squadOf(t), youth = youthTeams.includes(t);
   out.GK = { n: gkOf(t).n, pos: 'GK' };
-  sq.forEach(p => { out[p.pos] = { n: p.n, pos: p.pos, star: p.senior && !youth }; });
-  out.CB2 = Object.assign({ pos: 'CB' }, ensureCB2(t), { pos: 'CB' });
+  sq.forEach(p => { out[p.pos] = { n: p.n, pos: p.pos, f: formLevel(p) }; });
+  out.CB2 = Object.assign({ pos: 'CB' }, ensureCB2(t), { pos: 'CB' }); out.CB2.f = formLevel(t.cb2);
   SLOT_ORDER.forEach(k => { if (!out[k]) out[k] = { n: 'ผู้เล่น', pos: SLOT_CODE[k] || k }; });
   if (mine && planStart().on) {
     const key = out[P.pos] ? P.pos : 'CM';
     out[key] = { n: P.name, pos: P.pos, me: true };
   }
-  return SLOT_ORDER.map(k => Object.assign({ slot: k }, out[k]));
+  const list = SLOT_ORDER.map(k => Object.assign({ slot: k }, out[k]));
+  let cap = null;
+  if (mine && P.role === 'กัปตันทีม') cap = list.find(x => x.me);
+  if (!cap) { const ld = penLeaders(t).map(x => x.n); cap = list.find(x => ld.includes(x.n)) || list.find(x => !x.me && x.slot !== 'GK' && findPl(t, x.n) && findPl(t, x.n).senior); }
+  if (cap) cap.cap = true;
+  return list;
 }
 function fname(n) { return String(n).replace(' ★', '').split(' ')[0]; }
 function lineupSVG(list, opp) {
   const W = 300, H = 372, L = '#27443a', fill = opp ? '#3a2428' : '#1c2c27', stroke = opp ? '#ff7a88' : '#2ee6a6';
   let s = `<svg viewBox="0 0 ${W} ${H}" class="lu-svg"><rect width="${W}" height="${H}" rx="14" fill="#0e1613"/><rect x="10" y="10" width="${W - 20}" height="${H - 20}" fill="none" stroke="${L}" stroke-width="1.5"/><line x1="10" y1="${H / 2}" x2="${W - 10}" y2="${H / 2}" stroke="${L}"/><circle cx="${W / 2}" cy="${H / 2}" r="30" fill="none" stroke="${L}"/><rect x="85" y="10" width="130" height="46" fill="none" stroke="${L}"/><rect x="85" y="${H - 56}" width="130" height="46" fill="none" stroke="${L}"/><rect x="115" y="10" width="70" height="18" fill="none" stroke="${L}"/><rect x="115" y="${H - 28}" width="70" height="18" fill="none" stroke="${L}"/><text x="${W - 18}" y="26" font-size="9" fill="#3f6d5d" text-anchor="end" font-family="IBM Plex Sans Thai">ทิศบุก ↑</text>`;
   list.forEach(p => {
-    const [px, py] = SLOTS[p.slot], x = px / 100 * W, y = py / 100 * H, me = p.me;
-    s += `<circle cx="${x}" cy="${y}" r="${me ? 14 : 12}" fill="${me ? '#2ee6a6' : fill}" stroke="${me ? '#b9ffe6' : stroke}" stroke-width="${me ? 2 : 1.2}"/><text x="${x}" y="${y + 3}" font-size="8" font-weight="700" text-anchor="middle" fill="${me ? '#04231a' : '#cfe9df'}" font-family="IBM Plex Sans Thai">${p.pos}</text><text x="${x}" y="${y + 25}" font-size="10" font-weight="${me ? 700 : 500}" text-anchor="middle" fill="${me ? '#2ee6a6' : '#e8edf3'}" font-family="IBM Plex Sans Thai">${me ? 'คุณ' : fname(p.n)}${p.star ? '★' : ''}</text>`;
+    const [px, py] = SLOTS[p.slot], x = px / 100 * W, y = py / 100 * H, me = p.me, fc = !me && FORM_COL[p.f == null ? 1 : p.f], fl = fc ? fc[1] : fill, st = fc ? fc[0] : stroke;
+    s += `<circle cx="${x}" cy="${y}" r="${me ? 14 : 12}" fill="${me ? '#2ee6a6' : fl}" stroke="${me ? '#b9ffe6' : st}" stroke-width="${me ? 2 : (fc ? 2 : 1.2)}"/><text x="${x}" y="${y + 3}" font-size="8" font-weight="700" text-anchor="middle" fill="${me ? '#04231a' : '#cfe9df'}" font-family="IBM Plex Sans Thai">${p.pos}</text><text x="${x}" y="${y + 25}" font-size="10" font-weight="${me ? 700 : 500}" text-anchor="middle" fill="${me ? '#2ee6a6' : '#e8edf3'}" font-family="IBM Plex Sans Thai">${me ? 'คุณ' : fname(p.n)}</text>`;
+    if (p.cap) s += `<circle cx="${x + 10}" cy="${y - 10}" r="6" fill="#f5c542" stroke="#0e1613" stroke-width="1"/><text x="${x + 10}" y="${y - 7.3}" font-size="8" font-weight="800" text-anchor="middle" fill="#2a1f00" font-family="IBM Plex Sans Thai">C</text>`;
   });
   return s + '</svg>';
 }
@@ -3346,9 +3365,10 @@ function renderLineup() {
   const tabs = `<div class="lu-tabs"><button class="${mine ? 'on' : ''}" onclick="lineupTab='my';renderLineup()">${myName()}</button>${opp ? `<button class="${!mine ? 'on' : ''}" onclick="lineupTab='opp';renderLineup()">${opp.name}</button>` : ''}</div>`;
   if (!list.length) { box.innerHTML = tabs + '<div class="lu-note">ยังไม่มีรายชื่อผู้เล่นของทีมนี้</div>'; return; }
   if (mine && !plan.on) note = `<div class="lu-note warn">คุณไม่ได้ลงตัวจริงนัดนี้ (${plan.why}) · อยู่ในรายชื่อสำรอง รอโค้ชส่งลงสนาม</div>`;
-  else if (mine) note = '<div class="lu-note">คุณเป็นตัวจริงนัดนี้ · ชื่อเพื่อนร่วมทีมด้านล่างคือคนที่คุณจะส่งบอลให้</div>';
-  const rows = list.map(p => `<div class="lu-row${p.me ? ' me' : ''}"><b>${p.pos}</b><span>${p.me ? P.name + ' (คุณ)' : p.n}${p.star ? ' ★' : ''}</span></div>`).join('');
-  box.innerHTML = tabs + lineupSVG(list, !mine) + note + `<div class="lu-list">${rows}</div>`;
+  else if (mine) note = '<div class="lu-note">คุณเป็นตัวจริงนัดนี้ · ชื่อเพื่อนร่วมทีมด้านล่างคือคนที่คุณจะส่งบอลให้ สีวงกลมบอกฟอร์มของแต่ละคน</div>';
+  const rows = list.map(p => `<div class="lu-row${p.me ? ' me' : ''}"><b>${p.pos}</b><span>${p.me ? P.name + ' (คุณ)' : p.n}${p.cap ? ' <em style="font-style:normal;color:#f5c542;font-weight:700">(C)</em>' : ''}</span></div>`).join('');
+  const legend = `<div class="lu-note" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:6px 0 0">ฟอร์ม: ${[0, 1, 2, 3].map(i => `<span style="display:inline-flex;align-items:center;gap:4px"><i style="width:10px;height:10px;border-radius:50%;display:inline-block;border:2px solid ${i === 1 ? '#2ee6a6' : FORM_COL[i][0]};background:${i === 1 ? '#1c2c27' : FORM_COL[i][1]}"></i>${FORM_TXT[i]}</span>`).join('')} · <b style="color:#f5c542">C</b> กัปตัน</div>`;
+  box.innerHTML = tabs + lineupSVG(list, !mine) + legend + note + `<div class="lu-list">${rows}</div>`;
 }
 function toggleLineup() {
   const box = $id('lineupPanel'), btn = $id('btnLineup'); if (!box) return;
@@ -3373,13 +3393,16 @@ const _fmdA = finishMatchDay;
 finishMatchDay = function () { lineupViewed = false; planCache = null; return _fmdA.apply(this, arguments); };
 
 /* ---------- ชื่อเพื่อนร่วมทีมในเหตุการณ์ ---------- */
+let curMatePl = null;
 function mateFor(seed, tag) {
+  curMatePl = null;
   try {
     const pool = tag === 'def' || tag === 'cdef' ? ['CB', 'CB2', 'LB', 'RB', 'CDM'] : tag === 'mid' ? ['CM', 'CAM', 'CDM', 'LW', 'RW', 'ST'] : ['ST', 'LW', 'RW', 'CAM', 'CM'];
     const L = lineupOf(myTeam(), true).filter(x => !x.me && pool.includes(x.slot) && x.slot !== (SLOT_ORDER.find(k => k === P.pos) || '#'));
     if (!L.length) return null;
     let h = 0; for (const ch of seed) h = (h * 31 + ch.charCodeAt(0)) % 9973;
-    return fname(L[h % L.length].n);
+    const ent = L[h % L.length]; curMatePl = findPl(myTeam(), ent.n); window.curMateF = ent.f;
+    return fname(ent.n);
   } catch (e) { return null; }
 }
 
@@ -3484,9 +3507,11 @@ function evPitch2(z, pen, mate) {
   if (!(z.t === 'pen' && gkMe)) dots += D(z.ko || [.96, .5], '#ff7a88', 4.6);
   let lab = '';
   if (mate && z.m && z.m[0]) {
-    const mp = z.m[0];
-    lab += `<line x1="${X(me[0])}" y1="${Y(me[1])}" x2="${X(mp[0])}" y2="${Y(mp[1])}" stroke="#2ee6a6" stroke-width="1" stroke-dasharray="3 3" opacity=".55"/>`;
-    lab += `<text x="${X(mp[0])}" y="${(+Y(mp[1]) + (mp[1] > .5 ? 11 : -7)).toFixed(1)}" font-size="7.5" fill="#9fd2ff" text-anchor="middle" font-family="IBM Plex Sans Thai">${mate}</text>`;
+    const mp = z.m[0], fc = FORM_COL[window.curMateF == null ? 1 : window.curMateF], col = fc ? fc[0] : '#5aa9ff', x1 = X(me[0]), y1 = Y(me[1]), x2 = X(mp[0]), y2 = Y(mp[1]);
+    lab += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#2ee6a6" stroke-width="1.4" opacity=".8"/>`
+      + `<circle cx="${x2}" cy="${y2}" r="9" fill="${col}" opacity=".25"><animate attributeName="r" values="6;12;6" dur="1.4s" repeatCount="indefinite"/></circle><circle cx="${x2}" cy="${y2}" r="5.2" fill="${col}" stroke="#fff" stroke-width="1"/>`
+      + `<circle r="2.2" fill="#fff"><animateMotion dur="1.3s" repeatCount="indefinite" path="M${x1},${y1} L${x2},${y2}"/></circle>`
+      + `<text x="${x2}" y="${(+y2 + (mp[1] > .5 ? 14 : -9)).toFixed(1)}" font-size="8.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="IBM Plex Sans Thai">${mate}</text>`;
   }
   lab += `<text x="${X(me[0])}" y="${(+Y(me[1]) + (me[1] > .5 ? -9 : 14)).toFixed(1)}" font-size="7.5" font-weight="700" fill="#2ee6a6" text-anchor="middle" font-family="IBM Plex Sans Thai">คุณ</text>`;
   return `<svg viewBox="0 0 ${W} ${H}"><rect width="${W}" height="${H}" fill="#0d1815"/>
